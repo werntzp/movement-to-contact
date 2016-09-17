@@ -39,6 +39,15 @@ class Unit {
     private int _size = SIZE_PLATOON;
     private int _eff = EFF_GREEN; 
     private int _owner = OWNER_PLAYER; 
+    private boolean _visible = false; 
+    
+    public void setVisible(boolean val) {
+        _visible = val; 
+    } 
+    
+    public boolean getVisible() {
+        return _Visible; 
+    }
     
     public void setType(int val) {
         _type = val; 
