@@ -16,6 +16,9 @@ import com.wpwiii.movement2contact.R;
 // class for units
 class Unit {
 
+    public static final int OWNER_PLAYER = 0;
+    public static final int OWNER_OPFOR = 1; 
+
     public static final int TYPE_INF = 0; 
     public static final int TYPE_MG = 1; 
     public static final int TYPE_HQ = 2; 
@@ -35,7 +38,8 @@ class Unit {
     private int _type = TYPE_INF; 
     private int _size = SIZE_PLATOON;
     private int _eff = EFF_GREEN; 
-
+    private int _owner = OWNER_PLAYER; 
+    
     public void setType(int val) {
         _type = val; 
     }
@@ -59,6 +63,15 @@ class Unit {
     public int getEff() {
         return _eff; 
     }
+
+    public void setOwner(int val) {
+        _owner = val; 
+    }
+    
+    public int getOwner() {
+        return _owner; 
+    }
+
     
 }
 
