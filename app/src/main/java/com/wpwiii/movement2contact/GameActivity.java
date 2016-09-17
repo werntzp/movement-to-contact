@@ -16,9 +16,50 @@ import com.wpwiii.movement2contact.R;
 // class for units
 class Unit {
 
+    public static final int TYPE_INF = 0; 
+    public static final int TYPE_MG = 1; 
+    public static final int TYPE_HQ = 2; 
+    public static final int TYPE_SNIPER = 3; 
+    public static final int TYPE_MORTAR = 4;
+    
+    public static final int SIZE_SQUAD = 0;
+    public static final int SIZE_PLATOON = 1;
+    public static final int SIZE_SECTION = 2; 
+    public static final int SIZE_TEAM = 3; 
 
+    public static final int EFF_GREEN = 3; 
+    public static final int EFF_AMBER = 2; 
+    public static final int EFF_RED = 1; 
+    public static final int EFF_BLACK = 0; 
 
+    private int _type = TYPE_INF; 
+    private int _size = SIZE_PLATOON;
+    private int _eff = EFF_GREEN; 
 
+    public void setType(int val) {
+        _type = val; 
+    }
+    
+    public int getType() {
+        return _type; 
+    }
+    
+    public void setSize(int val) {
+        _size = val; 
+    }
+    
+    public int getSize() {
+        return _size; 
+    }
+    
+    public void setEff(int val) {
+        _eff = val; 
+    }
+    
+    public int getEff() {
+        return _eff; 
+    }
+    
 }
 
 
