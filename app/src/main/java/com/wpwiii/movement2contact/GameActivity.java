@@ -1,5 +1,7 @@
 package com.wpwiii.movement2contact;
 
+import android.graphics.Color;
+import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.app.Activity;
@@ -7,11 +9,20 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.view.View;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.content.Intent;
 import java.util.Random;
 import com.wpwiii.movement2contact.R;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 // class for units
 class Unit {
@@ -39,49 +50,92 @@ class Unit {
     private int _size = SIZE_PLATOON;
     private int _eff = EFF_GREEN; 
     private int _owner = OWNER_PLAYER; 
-    private boolean _visible = false; 
-    
-    public void setVisible(boolean val) {
-        _visible = val; 
-    } 
-    
-    public boolean getVisible() {
-        return _Visible; 
+    private boolean _isVisible = false;
+    private String _name = "";
+    private boolean _isActive = false;
+    private int _maxMove = 0;
+    private int _remainingMove = 0;
+    private int _attackRange = 0;
+    private boolean _hasAttacked = false;
+    private boolean _isSuppressed = false;
+    private int _attackNumber = 0;
+
+    public Unit(String name, int type, int size, int owner, int attackRange, int attackNumber, int maxMove) {
+
+        // set incoming values and defaults
+        _owner = owner;
+        if (_owner == OWNER_PLAYER) {
+            _isVisible = true;
+        }
+        _type = type;
+        _size = size;
+        _attackRange = attackRange;
+        _attackNumber = attackNumber;
+        _eff = EFF_GREEN;
+        _maxMove = maxMove;
+        _remainingMove = maxMove;
+        _isActive = false;
+        _hasAttacked = false;
+        _isSuppressed = false;
+        _name = name;
+
     }
-    
-    public void setType(int val) {
-        _type = val; 
+
+    protected void setIsSuppressed(boolean val) { _isSuppressed = val; }
+    protected void setHasAttacked(boolean val) {
+        _hasAttacked = val;
     }
-    
-    public int getType() {
+    protected void setRemainingMove(int val) {
+        _remainingMove = val;
+    }
+    protected void setIsActive(boolean val) {
+        _isActive = val;
+    }
+    protected void setIsVisible(boolean val) {
+        _isVisible = val;
+    }
+    protected void setEff(int val) {
+        _eff = val;
+    }
+
+    protected int getAttackNumber() {
+        return _attackNumber;
+    }
+    protected boolean getIsSuppressed() {
+        return _isSuppressed;
+    }
+    protected boolean getHasAttacked() {
+        return _hasAttacked;
+    }
+    protected int getAttackRange() {
+        return _attackRange;
+    }
+    protected int getRemainingMove() {
+        return _remainingMove;
+    }
+    protected int getMaxMove() {
+        return _maxMove;
+    }
+    protected boolean getIsActive() {
+        return _isActive;
+    }
+    protected boolean getIsVisible() {
+        return _isVisible;
+    }
+    protected int getType() {
         return _type; 
     }
-    
-    public void setSize(int val) {
-        _size = val; 
-    }
-    
-    public int getSize() {
+    protected int getSize() {
         return _size; 
     }
-    
-    public void setEff(int val) {
-        _eff = val; 
-    }
-    
-    public int getEff() {
+    protected int getEff() {
         return _eff; 
     }
-
-    public void setOwner(int val) {
-        _owner = val; 
-    }
-    
-    public int getOwner() {
+    protected int getOwner() {
         return _owner; 
     }
+    protected String getName() { return _name; }
 
-    
 }
 
 
@@ -144,6 +198,7 @@ public class GameActivity extends AppCompatActivity {
     Intent myIntent = getIntent();
     MapSquare[] mapSquares;
     private Integer[] imageIds = new Integer[MAX_ARRAY];
+    private ImageView imgPrevClicked = null;
 
 
     // ===========================
@@ -159,10 +214,127 @@ public class GameActivity extends AppCompatActivity {
         return pos;
     }
 
+
+    // ===========================
+    // getUnitIcon
+    // ===========================
+    int getUnitIcon(Unit u) {
+
+        int img = 0;
+
+        // make decisions for icon based on size and type
+        if (u.getType() == Unit.TYPE_INF) {
+            if (u.getSize() == Unit.SIZE_SQUAD) {
+                img = R.drawable.inf_squad;
+            } else {
+                switch (u.getEff()) {
+                    case Unit.EFF_AMBER:
+                        img = R.drawable.inf_platoon_amber;
+                        break;
+                    case Unit.EFF_BLACK:
+                        img = R.drawable.inf_platoon_black;
+                        break;
+                    case Unit.EFF_RED:
+                        img = R.drawable.inf_platoon_red;
+                        break;
+                    default:
+                        img = R.drawable.inf_platoon_green;
+                }
+            }
+        }
+        if (u.getType() == Unit.TYPE_MG) {
+            switch (u.getEff()) {
+                case Unit.EFF_AMBER:
+                    img = R.drawable.mg_team_amber;
+                    break;
+                case Unit.EFF_BLACK:
+                    img = R.drawable.mg_team_black;
+                    break;
+                case Unit.EFF_RED:
+                    img = R.drawable.mg_team_red;
+                    break;
+                default:
+                    img = R.drawable.mg_team_green;
+            }
+        }
+        if ((u.getType() == Unit.TYPE_MORTAR) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            switch (u.getEff()) {
+                case Unit.EFF_AMBER:
+                    img = R.drawable.mortar_section_amber;
+                    break;
+                case Unit.EFF_BLACK:
+                    img = R.drawable.mortar_section_black;
+                    break;
+                case Unit.EFF_RED:
+                    img = R.drawable.mortar_section_red;
+                    break;
+                default:
+                    img = R.drawable.mortar_section_green;
+            }
+        }
+        if ((u.getType() == Unit.TYPE_MORTAR) && (u.getOwner() == Unit.OWNER_OPFOR)) {
+            img = R.drawable.mortar_section;
+        }
+        if (u.getType() == Unit.TYPE_HQ) {
+            switch (u.getEff()) {
+                case Unit.EFF_AMBER:
+                    img = R.drawable.hq_section_amber;
+                    break;
+                case Unit.EFF_BLACK:
+                    img = R.drawable.hq_section_black;
+                    break;
+                case Unit.EFF_RED:
+                    img = R.drawable.hq_section_red;
+                    break;
+                default:
+                    img = R.drawable.hq_section_green;
+            }
+        }
+        if (u.getType() == Unit.TYPE_SNIPER) {
+            img = R.drawable.sniper_team;
+        }
+
+        return img;
+
+
+
+    }
+
     // ===========================
     // setUpFriendlyUnits
     // ===========================
     void setUpFriendlyUnits() {
+
+        // open up csv in res/raw folder
+        InputStream ins = getResources().openRawResource(
+                getResources().getIdentifier("units",
+                        "raw", getPackageName()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
+        StringBuilder out = new StringBuilder();
+        String line;
+        String item;
+        Unit unit;
+        Integer pos = 0;
+
+        try {
+            while ((line = reader.readLine()) != null) {
+                String [] items = line.split(",");
+                // create a unit class
+                unit = new Unit(items[0], Integer.parseInt(items[2]), Integer.parseInt(items[3]), Integer.parseInt(items[1]),
+                        Integer.parseInt(items[4]), Integer.parseInt(items[5]), Integer.parseInt(items[6]));
+                // drop that into the map array
+                pos = getArrayPosforRowCol(Integer.parseInt(items[7]), Integer.parseInt(items[8]));
+                mapSquares[pos].setUnit(unit);
+                // also, overwrite the image for images array
+                imageIds[pos] = getUnitIcon(unit);
+
+            }
+            reader.close();
+        }
+        catch (IOException ioe) {
+            // do nothing
+        }
+
 
     }
 
@@ -225,7 +397,7 @@ public class GameActivity extends AppCompatActivity {
             ms.setCol(col);
             col++;
             if (col > MAX_COLS) {
-                col = 0;
+                col = 1;
                 row++;
             };
             // randomly assign a terrain type
@@ -239,10 +411,10 @@ public class GameActivity extends AppCompatActivity {
         }
 
         // next, manually set friendly units
-
+        setUpFriendlyUnits();
 
         // set the initial turn text
-        turnString  = "Player 1 Turn";
+        turnString  = "Movement To Contact - Turn 1 - Your turn";
         actionString = "";
 
 
@@ -260,6 +432,7 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     @Override
     public void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_game);
@@ -290,11 +463,64 @@ public class GameActivity extends AppCompatActivity {
         turnText.setText(turnString);
         actionText.setText(actionString);
 
+        // set the long press
+
+        gridView.setOnItemLongClickListener(new OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View v,
+                                           int position, long id) {
+                Log.d(TAG, "LongClick at position: " + Integer.toString(position));
+                return true;
+            }
+        });
+
+
         // set the onlick
         gridView.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
                 Log.d(TAG, "Clicked on position: " + Integer.toString(position));
+
+                // always clear out action text
+                actionText.setText("");
+
+                ImageView imgClicked =  (ImageView) v;
+                // if a player unit, up the padding and change background color to show highlight
+                switch ((Integer)imgClicked.getTag()) {
+                    case R.drawable.inf_platoon_amber:
+                    case R.drawable.inf_platoon_black:
+                    case R.drawable.inf_platoon_green:
+                    case R.drawable.inf_platoon_red:
+                    case R.drawable.mg_team_amber:
+                    case R.drawable.mg_team_black:
+                    case R.drawable.mg_team_green:
+                    case R.drawable.mg_team_red:
+                    case R.drawable.hq_section_amber:
+                    case R.drawable.hq_section_black:
+                    case R.drawable.hq_section_green:
+                    case R.drawable.hq_section_red:
+                    case R.drawable.mortar_section_amber:
+                    case R.drawable.mortar_section_black:
+                    case R.drawable.mortar_section_green:
+                    case R.drawable.mortar_section_red:
+                        // set new one
+                        imgClicked.setPadding(5,5,5,5);
+                        imgClicked.setBackgroundColor(Color.BLUE);
+                        // get info on unit selected
+                        Unit u = mapSquares[position].getUnit();
+                        // update the action text
+                        actionText.setText("Selected: " + u.getName());
+                    default:
+                        // reset old one (if there was one)
+                        if (imgPrevClicked != null) {
+                            imgPrevClicked.setPadding(2, 2, 2, 2);
+                            imgPrevClicked.setBackgroundColor(Color.BLACK);
+                        }
+
+                }
+                // store
+                imgPrevClicked = imgClicked;
+
             }
         });
 

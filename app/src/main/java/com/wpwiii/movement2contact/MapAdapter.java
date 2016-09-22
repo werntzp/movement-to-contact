@@ -10,10 +10,13 @@ import android.widget.GridView;
 import android.graphics.Color;
 import com.wpwiii.movement2contact.R;
 import java.util.Random;
+import android.widget.AdapterView.OnItemClickListener;
+import android.util.Log;
 
 public class MapAdapter extends BaseAdapter {
     private Context mContext;
     private Integer[] mThumbIds = new Integer[150];
+    private static final String TAG = "MapAdapter";
 
     public MapAdapter(Context c) {
         mContext = c;
@@ -51,10 +54,10 @@ public class MapAdapter extends BaseAdapter {
             imageView = (ImageView) convertView;
         }
 
+        imageView.setTag(mThumbIds[position]);
         imageView.setImageResource(mThumbIds[position]);
         return imageView;
     }
-
 
 
 
