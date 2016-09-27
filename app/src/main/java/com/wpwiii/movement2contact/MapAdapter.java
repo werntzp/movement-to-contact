@@ -14,20 +14,22 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.util.Log;
 
 public class MapAdapter extends BaseAdapter {
-    private Context mContext;
-    private Integer[] mThumbIds = new Integer[150];
+
+    private Context _mContext;
+    private Integer[] _mThumbIds = new Integer[GameActivity.MAX_ARRAY];
     private static final String TAG = "MapAdapter";
+    private ImageView[] _imageViews = new ImageView[GameActivity.MAX_ARRAY];
 
     public MapAdapter(Context c) {
-        mContext = c;
+        _mContext = c;
     }
 
     public int getCount() {
-        return mThumbIds.length;
+        return _mThumbIds.length;
     }
 
     public Object getItem(int position) {
-        return null;
+        return _imageViews[position];
     }
 
     public long getItemId(int position) {
@@ -36,7 +38,7 @@ public class MapAdapter extends BaseAdapter {
 
     // method to accept incoming array of image ids
     public void setImageArray(Integer[] val) {
-        mThumbIds = val;
+        _mThumbIds = val;
     }
 
     // create a new ImageView for each item referenced by the Adapter
@@ -45,7 +47,7 @@ public class MapAdapter extends BaseAdapter {
 
         if (convertView == null) {
             // if it's not recycled, initialize some attributes
-            imageView = new ImageView(mContext);
+            imageView = new ImageView(_mContext);
             imageView.setLayoutParams(new GridView.LayoutParams(108, 108));
             imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
             imageView.setPadding(2,2,2,2);
@@ -54,8 +56,10 @@ public class MapAdapter extends BaseAdapter {
             imageView = (ImageView) convertView;
         }
 
-        imageView.setTag(mThumbIds[position]);
-        imageView.setImageResource(mThumbIds[position]);
+        imageView.setTag(_mThumbIds[position]);
+        imageView.setImageResource(_mThumbIds[position]);
+        // store imageview into internal array so we can get to each imageview later
+        _imageViews[position] = imageView;
         return imageView;
     }
 

@@ -184,22 +184,22 @@ class MapSquare {
 // main class
 public class GameActivity extends AppCompatActivity {
 
-    GridView gridView;
-    MapAdapter mapAdapter = new MapAdapter(this);
+    GridView _gridView;
+    MapAdapter _mapAdapter = new MapAdapter(this);
     private static final String TAG = "GameActivity";
     public static final int MAX_ROWS = 15;
     public static final int MAX_COLS = 10;
     public static final int MAX_ARRAY = 150;
-    private Integer[] mapArray = new Integer[MAX_ARRAY];
-    TextView turnText;
-    TextView actionText;
-    String actionString = "";
-    String turnString = "";
-    Intent myIntent = getIntent();
-    MapSquare[] mapSquares;
-    private Integer[] imageIds = new Integer[MAX_ARRAY];
-    private ImageView imgPrevClicked = null;
-
+    private Integer[] _mapArray = new Integer[MAX_ARRAY];
+    TextView _turnText;
+    TextView _actionText;
+    String _actionString = "";
+    String _turnString = "";
+    Intent _myIntent = getIntent();
+    MapSquare[] _mapSquares;
+    private Integer[] _imageIds = new Integer[MAX_ARRAY];
+    private Unit _activeUnit = null;
+    private MapSquare _activeSq = null;
 
     // ===========================
     // getArrayPosforRowCol
@@ -207,7 +207,7 @@ public class GameActivity extends AppCompatActivity {
     int getArrayPosforRowCol(int row, int col) {
         int pos = 0;
         for (pos = 0; pos < MAX_ARRAY; pos++) {
-            if ((mapSquares[pos].getRow() == row) && (mapSquares[pos].getCol() == col)) {
+            if ((_mapSquares[pos].getRow() == row) && (_mapSquares[pos].getCol() == col)) {
                 break;
             }
         }
@@ -272,9 +272,6 @@ public class GameActivity extends AppCompatActivity {
                     img = R.drawable.mortar_section_green;
             }
         }
-        if ((u.getType() == Unit.TYPE_MORTAR) && (u.getOwner() == Unit.OWNER_OPFOR)) {
-            img = R.drawable.mortar_section;
-        }
         if (u.getType() == Unit.TYPE_HQ) {
             switch (u.getEff()) {
                 case Unit.EFF_AMBER:
@@ -295,8 +292,6 @@ public class GameActivity extends AppCompatActivity {
         }
 
         return img;
-
-
 
     }
 
@@ -324,9 +319,9 @@ public class GameActivity extends AppCompatActivity {
                         Integer.parseInt(items[4]), Integer.parseInt(items[5]), Integer.parseInt(items[6]));
                 // drop that into the map array
                 pos = getArrayPosforRowCol(Integer.parseInt(items[7]), Integer.parseInt(items[8]));
-                mapSquares[pos].setUnit(unit);
+                _mapSquares[pos].setUnit(unit);
                 // also, overwrite the image for images array
-                imageIds[pos] = getUnitIcon(unit);
+                _imageIds[pos] = getUnitIcon(unit);
 
             }
             reader.close();
@@ -342,6 +337,232 @@ public class GameActivity extends AppCompatActivity {
     // setUpEnemyUnits
     // ===========================
     void setUpEnemyUnits() {
+
+    }
+
+    // ===========================
+    // getTerrainImage
+    // ===========================
+    int getTerrainImage(MapSquare ms) {
+
+        return ms.getTerrainType();
+
+    }
+
+    // ===========================
+    // getMoveCost
+    // ===========================
+    int getMoveCost(MapSquare ms) {
+
+        Log.d(TAG, "Entered getMoveCost");
+
+        int moveCost = 0;
+
+        // see if unit has enough move
+        switch (ms.getTerrainType()) {
+            case R.drawable.scrub:
+                moveCost = 1;
+                break;
+            case R.drawable.woods:
+                moveCost = 2;
+                break;
+            case R.drawable.rocky:
+                moveCost = 3;
+        }
+
+        Log.d(TAG, "Exiting getMoveCost. moveCost = " + Integer.toString(moveCost));
+        return moveCost;
+
+    }
+
+
+    // ===========================
+    // canMove
+    // ===========================
+    boolean isAbleToMoveInto(MapSquare ms, Unit u) {
+
+        Log.d(TAG, "Entered isAbleToMoveInfo");
+
+        int moveRequired = 0;
+
+        // see if unit has enough move
+        switch (ms.getTerrainType()) {
+            case R.drawable.scrub:
+                moveRequired = 1;
+                break;
+            case R.drawable.woods:
+                moveRequired = 2;
+                break;
+            case R.drawable.rocky:
+                moveRequired = 3;
+        }
+
+        Log.d(TAG, "Exiting isAbleToMoveInto. u.getRemainingMove() = " + Integer.toString(u.getRemainingMove())+ ", moveRequired = " + Integer.toString(moveRequired));
+        return (u.getRemainingMove() >= moveRequired);
+
+    }
+
+    // ===========================
+    // doMove
+    // ===========================
+    boolean doMove(MapSquare fromSq, MapSquare toSq) {
+
+        Log.d(TAG, "Entered doMove");
+
+        int posFrom = 0;
+        int posTo = 0;
+        Unit u = null;
+        MapSquare ms = null;
+        int icon = 0;
+        ImageView v = null;
+
+        // first, figure out which array positions we're talking about
+        posFrom = getArrayPosforRowCol(fromSq.getRow(), fromSq.getCol());
+        posTo = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
+
+        // next, decide whether there's enough movement left to do it
+        if (isAbleToMoveInto(_mapSquares[posTo], _mapSquares[posFrom].getUnit())) {
+
+            // store what was there, then null it out
+            ms = _mapSquares[posFrom];
+            u = ms.getUnit();
+            ms.setUnit(null);
+            _mapSquares[posFrom] = ms;
+
+            // get imageview for current square and remove the unit
+            v = (ImageView) _mapAdapter.getItem(posFrom);
+            v.setPadding(2,2,2,2);
+            v.setBackgroundColor(Color.BLACK);
+            v.setImageResource(ms.getTerrainType());
+
+            // now drop that unit into new position
+            ms = _mapSquares[posTo];
+            u.setRemainingMove((u.getRemainingMove() - getMoveCost(ms)));
+            ms.setUnit(u);
+            _mapSquares[posTo] = ms;
+
+            // re-draw icon in new spot
+            v = (ImageView) _mapAdapter.getItem(posTo);
+            v.setPadding(5,5,5,5);
+            v.setBackgroundColor(Color.BLUE);
+            v.setImageResource(getUnitIcon(u));
+
+            // now set active
+            _activeUnit = u;
+            _activeSq = _mapSquares[posTo];
+
+            // we did a move
+            return true;
+
+        }
+        else {
+            // no move occured
+            return false;
+        }
+
+    }
+
+    // ===========================
+    // doAttack
+    // ===========================
+    void doAttack(MapSquare fromSq, MapSquare toSq) {
+
+        /**
+        var terrainMod = 0;
+        var attackNum = 0;
+        var damage = 0;
+        var roll = 0;
+        var enemyUnit = null;
+        var arrayPos = 0;
+        var effMod = 0;
+        var strokeColor = "";
+        var img = null;
+        var t = null;
+        var attackMsg = "";
+
+        // store enemy unit
+        enemyUnit = targetSq.unit;
+
+        // if enemy wasn't already visible, draw the unit make it visible
+        if (enemyUnit.visible === 0) {
+            enemyUnit.visible = 1;
+            strokeColor = getUnitStrokeColor(sq.unit);
+            img = getUnitImage(sq.unit);
+            t = getUnitXY(sq);
+            drawUnit(img, strokeColor, t[0], t[1]);
+
+        }
+
+        // set the has_attacked property to 1
+        friendlyUnit.has_attacked = 1;
+        _mapArray[pos].sq = friendlyUnit;
+
+        // quick check, if combat effectivenss is "black" (0), just bail
+        if (friendlyUnit.eff === 0) {
+            return;
+        }
+
+        // need to determine attack number; this is unit attack base - effectiveness modifier - terrain modifier
+        if ((targetSq.terrain == "Woods") || (targetSq.terrain == "Rocky")) {
+            terrainMod = -1;
+        }
+
+        if (friendlyUnit.eff == 1) {
+            effMod = -2;
+        } else if (friendlyUnit.eff == 2) {
+            effMod = -1;
+        }
+
+        attackNum = friendlyUnit.attack - effMod - terrainMod;
+
+        // pick a random number from 1 - 10 and see if attack num is below that
+        roll = getRandomNum(1, 10);
+
+        alertMessage("attackNum: " + attackNum + ", roll: " + roll);
+
+        if (roll <= attackNum) {
+            // hit!
+            damage = getRandomNum(1, 10);
+            alertMessage("damage: " + damage);
+            if (damage <= 8) {
+                enemyUnit.eff--;
+                alertMessage("unit " + enemyUnit.name + " lost effectiveness, now at " + enemyUnit.eff);
+                attackMsg = "The unit was hit and took damage.";
+            }
+
+            // certain types of unit cause supression
+            if ((friendlyUnit.type == "mg") || (friendlyUnit.type == "sniper") || (friendlyUnit.type == "mortar")) {
+                enemyUnit.is_suppressed = 1;
+                alertMessage("unit supressed!");
+                attackMsg += " It was also suppressed (no movement or attack possible).";
+            }
+
+        }
+
+        // update text (since we attacked)
+        if (friendlyUnit.player == "human") {
+            setUnitText(friendlyUnit);
+        }
+
+        // if enemy unit has gone to black, just get rid of it.
+        arrayPos = getArrayPosforRowCol(_mapArray, targetSq.row, targetSq.col);
+        if ((enemyUnit.eff === 0) && (enemyUnit.player == "ai")) {
+            alertMessage("unit " + targetSq.unit.name + " at row " + targetSq.row + ", col " + targetSq.col + " eliminated!");
+            attackMsg = "Unit is no longer combat effective!";
+            _mapArray[arrayPos].unit = null;
+            // redraw that map square since unit gone
+            drawMapSquare(targetSq);
+        } else {
+            // update the unit that was attacked
+            _mapArray[arrayPos].unit = enemyUnit;
+        }
+
+        // pop-up if unit lost effectiveness
+        if (attackMsg !== "") {
+            alert(attackMsg);
+        }
+
+         **/
 
     }
 
@@ -375,13 +596,72 @@ public class GameActivity extends AppCompatActivity {
         return terrainType;
     }
 
+    // ==========================
+    // is the toSq map spot adjaent to the fromSqu?
+    // ==========================
+    boolean isAdjacent(MapSquare fromSq, MapSquare toSq) {
+
+        Log.d(TAG, "Entered isAdjacent");
+
+        if ((fromSq == null) || (toSq == null)) {
+            return false;
+        }
+
+        int fromRow = fromSq.getRow();
+        int fromCol = fromSq.getCol();
+        boolean isAdj = false;
+
+        // loop through to find all possible combinations
+        for (int r = fromRow - 1; r < fromRow + 2; r++) {
+            for (int c = fromCol - 1; c < fromCol + 2; c++) {
+                // make sure within grid bounds
+                if ((r > 0) && (r <= MAX_ROWS) && (c > 0) && (c <= MAX_COLS)) {
+                    if ((r == toSq.getRow()) && (c == toSq.getCol())) {
+                        isAdj = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        Log.d(TAG, "Leaving isAdjacent. isAjd = " + Boolean.toString(isAdj));
+        return isAdj;
+
+    }
+
+    // ==========================
+    // is there a unit in this spot?
+    // ==========================
+    boolean isEmpty(MapSquare toSq) {
+        return (toSq.getUnit() == null);
+
+    }
+
+    // ==========================
+    // select unit in map square by changing border
+    // ==========================
+    void selectUnit(int pos) {
+        ImageView v = (ImageView) _mapAdapter.getItem(pos);
+        v.setPadding(5,5,5,5);
+        v.setBackgroundColor(Color.BLUE);
+    }
+
+    // ==========================
+    // deselect unit in map square by changing border
+    // ==========================
+    void deselectUnit(int pos) {
+        ImageView v = (ImageView) _mapAdapter.getItem(pos);
+        v.setPadding(2,2,2,2);
+        v.setBackgroundColor(Color.BLACK);
+    }
+
+
     // ===========================
     // createNewGame
     // ===========================
     void newGame() {
-
         // create array of map objects
-        mapSquares = new MapSquare[MAX_ARRAY];
+        _mapSquares = new MapSquare[MAX_ARRAY];
         MapSquare ms;
 
         // iterate and populate mapsquares
@@ -404,9 +684,9 @@ public class GameActivity extends AppCompatActivity {
             terrainType = randomizeTerrain();
             ms.setTerrainType(terrainType);
             // also, set to image id array we'll pass in later
-            imageIds[ctr] = terrainType;
+            _imageIds[ctr] = terrainType;
              // now add to array
-            mapSquares[ctr] = ms;
+            _mapSquares[ctr] = ms;
 
         }
 
@@ -414,8 +694,8 @@ public class GameActivity extends AppCompatActivity {
         setUpFriendlyUnits();
 
         // set the initial turn text
-        turnString  = "Movement To Contact - Turn 1 - Your turn";
-        actionString = "";
+        _turnString  = "Movement To Contact - Turn 1 - Your turn";
+        _actionString = "";
 
 
     }
@@ -428,6 +708,193 @@ public class GameActivity extends AppCompatActivity {
     }
 
     // ===========================
+    // doClick
+    // ===========================
+    void doClick(View v, int position) {
+
+        Log.d(TAG, "Entered doClick");
+
+        MapSquare ms = null;
+        Unit u = null;
+        int owner = Unit.OWNER_PLAYER;
+        int icon = 0;
+        ImageView imgClicked =  (ImageView) v;
+
+        // figure out what they clicked on
+        ms = _mapSquares[position];
+        u = ms.getUnit();
+
+        // #1 if active square, quick check to see if we selected same one
+        if ((_activeSq != null) && (_activeSq == ms)) {
+            deselectUnit(position);
+            _actionText.setText("");
+            _activeSq = null;
+            _activeUnit = null;
+            return;
+        }
+
+        // #2 if no active unit, the current one is now active (assuming player owns it)
+        if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            selectUnit(position);
+            _actionText.setText(u.getName() + ": " + u.getRemainingMove() + " move points remaining");
+            _activeUnit = u;
+            _activeSq = ms;
+            return;
+        }
+
+        // #3 if we have active square and unit, did they select on adjacent map square?
+        if (isAdjacent(_activeSq, ms)) {
+            // yes, adjacent
+            // (a) if friendly there, switch to that unit
+            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
+                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
+                selectUnit(position);
+                _actionText.setText(u.getName() + ": " + u.getRemainingMove() + " move points remaining");
+                _activeUnit = u;
+                _activeSq = ms;
+                return;
+            }
+            // (b) if empty, move in (assuming move left)
+            if (ms.getUnit() == null) {
+                if (doMove(_activeSq, ms)) {
+                    u = ms.getUnit();
+                    _actionText.setText(u.getName() + ": " + u.getRemainingMove() + " move points remaining");
+                }
+                else {
+                    _actionText.setText("Unable to move due to lack of remaining move points");
+                }
+                return;
+            }
+            // (c) if enemy there, attack
+            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_OPFOR)) {
+                doAttack(_activeSq, ms);
+                return;
+            }
+
+            // (d) otherwise, ignore
+            return;
+
+        }
+        else {
+            // not adjacent
+            // (a) if friendly, switch focus
+            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
+                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
+                selectUnit(position);
+                _actionText.setText(u.getName() + ": " + u.getRemainingMove() + " move points remaining");
+                _activeUnit = u;
+                _activeSq = ms;
+                return;
+            }
+            // (b) if enemy there and in range, attack
+
+            // (c) otherwise, ignore
+            return;
+
+        }
+
+
+        /**
+            else {
+                // we have an active square, did they click on an adjacent one?
+                if ((_activeSq !== null) && (isAdjacent(_activeSq, sq))) {
+                    alertMessage("active square and selected square is adjacent");
+                    alertMessage("adjacent square isEmpty? " + isEmpty(sq));
+                    // if empty and unit has move left, move there
+                    if ((isEmpty(sq)) && (_activeSq.unit !== null) && (_activeSq.unit.move_cur > 0)) {
+                        moveUnit(_activeSq, sq);
+                    }
+                    // if not empty, and there is friendly there, just bail
+                    else if ((!isEmpty(sq)) && (sq.unit.player == "human")) {
+                        alertMessage("friendly in our way ... switch over to that unit");
+                        selectUnit(sq, pos);
+                        setUnitText(sq.unit);
+                        deselectUnit(_activeSq);
+                    }
+                    // if not emoty, there is enemy and haven't attacked yet, attack
+                    else if ((!isEmpty(sq)) && (sq.unit.player == "ai") && (_activeSq.unit.has_attacked === 0)) {
+                        doAttack(_activeSq.unit, sq, pos);
+                        // don't swap out acive square
+                        return;
+                    }
+                    // if not empty, there is enemy but we have attacked, just bail
+                    else if ((!isEmpty(sq)) && (sq.unit.player == "ai") && (_activeSq.unit.has_attacked === 1)) {
+                        alertMessage("enemy there but already attacked ... bail");
+                        return;
+                    }
+
+                } else if ((_activeSq !== null) && (!isAdjacent(_activeSq, sq))) {
+                    alertMessage("active square and selected square is not adjacent");
+                    // if human player in spot, make that unit active
+                    if ((sq.unit !== null) && (sq.unit.player == "human")) {
+                        // deselect any other unit
+                        deselectUnit(_activeSq);
+                        selectUnit(sq);
+                    } else {
+                        // is there an enemy player there, within range and we haven't attacked yet?
+                        if ((sq.unit !== null) && (sq.unit.player == "ai") && (_activeSq.unit !== null) && (_activeSq.unit.has_attacked === 0)) {
+                            alertMessage("enemy player in square and we haven't attacked yet");
+                            // what is the range?
+                            if (getDistanceBetweenSquares(_activeSq.row, _activeSq.col, sq.row, sq.col) <= _activeSq.unit.range) {
+                                alertMessage("enemy within range, about to attack!");
+                                // actually can do an attack
+                                doAttack(_activeSq.unit, sq, pos);
+                            }
+                            // jump out because we want to keep active square the unit that attacked
+                            return;
+
+                        } else {
+                            // nope, just don't set an active square and bail
+                            _activeSq = null;
+                            return;
+
+                        }
+                    }
+
+                }
+                // clicked on a unit, but it is an enemy that is visible
+                else if ((unit !== null) && (unit.player == "ai") && (unit.visible == 1)) {
+                    alertMessage("clicked on visible enemy unit");
+                    // it is an enemy unit, so can show some things (but not all)
+                    setUnitText(unit);
+
+                }
+
+            }
+
+
+
+        }
+        else {
+
+            // if there is a unit at that square, see who owns it
+            if (u != null) {
+                owner = u.getOwner();
+                if (owner == Unit.OWNER_PLAYER) {
+                    // selected one of our units, so set active unit, highlight it on the map and set action text
+
+
+                }
+                else {
+                    // no active unit, and clicked on either terrain or enemy unit, so nothing to do
+                    // except un-highlight anything that previously was
+                    if (_imgPrevClicked != null) {
+                        _imgPrevClicked.setPadding(2,2,2,2);
+                        _imgPrevClicked.setBackgroundColor(Color.BLACK);
+                    }
+                }
+            }
+
+        }
+
+         **/
+
+
+
+    }
+
+
+    // ===========================
     // onCreate
     // ===========================
     @Override
@@ -438,12 +905,12 @@ public class GameActivity extends AppCompatActivity {
         setContentView(R.layout.activity_game);
 
         // get the two textviews for status
-        turnText = (TextView) findViewById(R.id.textView2);
-        actionText = (TextView) findViewById(R.id.textView8);
+        _turnText = (TextView) findViewById(R.id.textView2);
+        _actionText = (TextView) findViewById(R.id.textView8);
 
         // new game?
-        if (myIntent != null) {
-            if (myIntent.getBooleanExtra("NEW_GAME", Boolean.TRUE)) {
+        if (_myIntent != null) {
+            if (_myIntent.getBooleanExtra("NEW_GAME", Boolean.TRUE)) {
                 newGame();
             } else {
                 resumeGame();
@@ -454,18 +921,17 @@ public class GameActivity extends AppCompatActivity {
         }
 
         // set the mapadapter to build out the initial map
-        gridView = (GridView) findViewById(R.id.gridView1);
+        _gridView = (GridView) findViewById(R.id.gridView1);
         // pass in the array of image ids
-        mapAdapter.setImageArray(imageIds);
-        gridView.setAdapter(mapAdapter);
+        _mapAdapter.setImageArray(_imageIds);
+        _gridView.setAdapter(_mapAdapter);
 
         // set the textviews
-        turnText.setText(turnString);
-        actionText.setText(actionString);
+        _turnText.setText(_turnString);
+        _actionText.setText(_actionString);
 
         // set the long press
-
-        gridView.setOnItemLongClickListener(new OnItemLongClickListener() {
+        _gridView.setOnItemLongClickListener(new OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View v,
                                            int position, long id) {
@@ -476,50 +942,11 @@ public class GameActivity extends AppCompatActivity {
 
 
         // set the onlick
-        gridView.setOnItemClickListener(new OnItemClickListener() {
+        _gridView.setOnItemClickListener(new OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
                 Log.d(TAG, "Clicked on position: " + Integer.toString(position));
-
-                // always clear out action text
-                actionText.setText("");
-
-                ImageView imgClicked =  (ImageView) v;
-                // if a player unit, up the padding and change background color to show highlight
-                switch ((Integer)imgClicked.getTag()) {
-                    case R.drawable.inf_platoon_amber:
-                    case R.drawable.inf_platoon_black:
-                    case R.drawable.inf_platoon_green:
-                    case R.drawable.inf_platoon_red:
-                    case R.drawable.mg_team_amber:
-                    case R.drawable.mg_team_black:
-                    case R.drawable.mg_team_green:
-                    case R.drawable.mg_team_red:
-                    case R.drawable.hq_section_amber:
-                    case R.drawable.hq_section_black:
-                    case R.drawable.hq_section_green:
-                    case R.drawable.hq_section_red:
-                    case R.drawable.mortar_section_amber:
-                    case R.drawable.mortar_section_black:
-                    case R.drawable.mortar_section_green:
-                    case R.drawable.mortar_section_red:
-                        // set new one
-                        imgClicked.setPadding(5,5,5,5);
-                        imgClicked.setBackgroundColor(Color.BLUE);
-                        // get info on unit selected
-                        Unit u = mapSquares[position].getUnit();
-                        // update the action text
-                        actionText.setText("Selected: " + u.getName());
-                    default:
-                        // reset old one (if there was one)
-                        if (imgPrevClicked != null) {
-                            imgPrevClicked.setPadding(2, 2, 2, 2);
-                            imgPrevClicked.setBackgroundColor(Color.BLACK);
-                        }
-
-                }
-                // store
-                imgPrevClicked = imgClicked;
+                doClick(v, position);
 
             }
         });
