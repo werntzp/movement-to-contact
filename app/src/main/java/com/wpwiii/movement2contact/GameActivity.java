@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import android.media.MediaPlayer;
+import java.util.concurrent.TimeUnit;
 
 
 // class for units
@@ -62,6 +63,8 @@ class Unit {
     private boolean _hasAttacked = false;
     private boolean _isSuppressed = false;
     private int _attackNumber = 0;
+    private int _turnSuppressed = 0;
+    private int _aggression = 0;
 
     public Unit(String name, int type, int size, int owner, int attackRange, int attackNumber, int maxMove) {
 
@@ -100,6 +103,8 @@ class Unit {
     protected void setEff(int val) {
         _eff = val;
     }
+    protected void setTurnSuppressed(int val) { _turnSuppressed = val; }
+    protected void setAggression(int val) { _aggression = val; }
 
     protected int getAttackNumber() {
         return _attackNumber;
@@ -138,6 +143,8 @@ class Unit {
         return _owner; 
     }
     protected String getName() { return _name; }
+    protected int getTurnSuppressed() { return _turnSuppressed; }
+    protected int getAggression() { return _aggression; }
 
 }
 
@@ -198,7 +205,6 @@ public class GameActivity extends AppCompatActivity {
     private Unit _activeUnit = null;
     private MapSquare _activeSq = null;
     private int _turn = 1;
-    private String _turnPlayer = "Player";
 
     // ===========================
     // getArrayPosforRowCol
@@ -434,6 +440,7 @@ public class GameActivity extends AppCompatActivity {
         int range = 0;
         int attack = 0;
         int move = 0;
+        int aggression = 1;
 
         // first, let's figure out how many units we need to base off the templates in the CSV
         // how many bad guys (between 5 and 10)
@@ -458,12 +465,16 @@ public class GameActivity extends AppCompatActivity {
                 attack = Integer.parseInt(items[5]);
                 move = Integer.parseInt(items[6]);
 
+                // for each enemy unit, pick an aggression factor (which we'll use later when it comes to movemebt)
+                aggression = getRandomNumber(3, 1);
+
                 // based on type, do another loop
                 switch (type) {
                     case Unit.TYPE_INF:
                         // loop through inf units, find a spot for each, create a new unit and add to arrays
                         for (int ctr = 0; ctr < rifleSquads; ctr++) {
                             unit = new Unit(name, type, size, owner, range, attack, move);
+                            unit.setAggression(aggression);
                             placeEnemyUnit(unit);
                         }
 
@@ -471,6 +482,7 @@ public class GameActivity extends AppCompatActivity {
                         // loop through inf units, find a spot for each, create a new unit and add to arrays
                         for (int ctr = 0; ctr < mgTeams; ctr++) {
                             unit = new Unit(name, type, size, owner, range, attack, move);
+                            unit.setAggression(aggression);
                             placeEnemyUnit(unit);
                         }
 
@@ -478,6 +490,7 @@ public class GameActivity extends AppCompatActivity {
                         // loop through inf units, find a spot for each, create a new unit and add to arrays
                         for (int ctr = 0; ctr < sniperTeams; ctr++) {
                             unit = new Unit(name, type, size, owner, range, attack, move);
+                            unit.setAggression(aggression);
                             placeEnemyUnit(unit);
                         }
                 }
@@ -616,8 +629,148 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     void doOpForTurn() {
 
-        // TODO: Add in code for computer turn
-        doEndTurn();
+        Unit redUnit = null;
+        MapSquare ms = null;
+        int row = 0;
+        int col = 0;
+        boolean justAttacked = false;
+        int adjRow = 0;
+        int adjCol = 0;
+        int pos = 0;
+        Unit blueUnit = null;
+        int attackNum = 0;
+        int roll = 0;
+        int damage = 0;
+        String attackMsg = "";
+        ImageView v = null;
+
+        // loop through map looking for enemy units
+        // 1 = very aggressive, 2 = somewhat aggressive, 3 = passive
+
+        // iterate through array
+        for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
+
+            redUnit = _mapSquares[ctr].getUnit();
+            // have to meet all these conditions ... is a unit there that is computer and not suppressed
+            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (!redUnit.getIsSuppressed()) && (redUnit.getEff() > Unit.EFF_BLACK)) {
+
+                // found one, so get the row and column to see what is around it
+                ms = _mapSquares[ctr];
+                row = ms.getRow();
+                col = ms.getCol();
+
+                // #1 any units adjacent to player unit attack
+                // look around it in each direction
+                justAttacked = false;
+                for (int x = -1; x <= 1; x++) {
+                    // quick hack; if they attacked, broke out of inner loop but now we need to break out of outer loop
+                    if (justAttacked) {
+                        break;
+                    }
+                    for (int y = -1; y <= 1; y++) {
+                        adjRow = (row + x);
+                        adjCol = (col + y);
+                        // make sure we didn't go out of bounds
+                        if (adjRow < 1) {
+                            adjRow = 1;
+                        }
+                        if (adjRow > MAX_ROWS) {
+                            adjRow = MAX_ROWS;
+                        }
+                        if (adjCol < 1) {
+                            adjCol = 1;
+                        }
+                        if (adjCol > MAX_COLS) {
+                            adjCol = MAX_COLS;
+                        }
+
+                        // get the map array pos for row
+                        pos = getArrayPosforRowCol(adjRow, adjCol);
+                        // is there a player unit there?
+                        blueUnit = _mapSquares[pos].getUnit();
+
+                        if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER)) {
+                            // attack!
+                            // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
+                            attackNum = redUnit.getAttackNumber();
+                            switch (ms.getTerrainType()) {
+                                case R.drawable.woods:
+                                case R.drawable.rocky:
+                                    attackNum = attackNum - 1;
+                            }
+                            switch (redUnit.getEff()) {
+                                case Unit.EFF_AMBER:
+                                    attackNum = attackNum - 1;
+                                    break;
+                                case Unit.EFF_RED:
+                                    attackNum = attackNum - 2;
+                            }
+
+                            roll = getRandomNumber(10, 1);
+                            Log.d(TAG, "attack number: " + Integer.toString(attackNum));
+                            Log.d(TAG, "attack roll: " + Integer.toString(roll));
+
+                            // pick a sound to play
+                            MediaPlayer mediaPlayer = MediaPlayer.create(this, getSound(redUnit));
+                            mediaPlayer.start();
+
+                            // determine whether hit took place and then any damage
+                            if (roll <= attackNum) {
+                                // hit!
+                                damage = getRandomNumber(10, 1);
+                                Log.d(TAG, "damage roll: " + Integer.toString(damage));
+                                if (damage <= 8) {
+                                    blueUnit.setEff(blueUnit.getEff() - 1);
+                                    Log.d(TAG, "Friendly unit effectiveness now " + blueUnit.getEff());
+                                    attackMsg = "The unit was hit and took damage.";
+                                } else {
+                                    attackMsg = "The unit was attacked, but did not suffer any damage.";
+                                }
+
+                                // certain types of unit cause supression
+                                switch (redUnit.getType()) {
+                                    case Unit.TYPE_SNIPER:
+                                    case Unit.TYPE_MG:
+                                        blueUnit.setIsSuppressed(true);
+                                        blueUnit.setTurnSuppressed(_turn);
+                                        attackMsg += " It was also suppressed (will not be able to attack or move again this turn).";
+                                }
+                                // update array
+                                _mapSquares[pos].setUnit(blueUnit);
+                                // also, grab the imageview and update the image (especially if effectiveness changed)
+                                v = (ImageView) _mapAdapter.getItem(pos);
+                                v.setImageResource(getUnitIcon(blueUnit));
+
+                            } else {
+                                attackMsg = "The unit was attacked, but did not suffer any damage.";
+
+                            }
+
+                            // make the attackimg unit visible and set their attacked flag
+                            redUnit.setHasAttacked(true);
+                            redUnit.setIsVisible(true);
+                            // they don't want to move away from player unit, do set flag
+                            justAttacked = true;
+                            // break out of loop, we're done
+                            break;
+                        }
+                    }
+
+                }
+
+                }
+
+            }
+            // #2 any units in range of player unit with 1 or 2, attack (sniper, mg)
+
+
+
+            // #3 units with aggfac of 1, move towards nearest player unit, aggfac 2 have 50/50 shot and aggfac of 3 have 50/50 shot to stay in place or move away
+
+
+
+
+        return;
 
     }
 
@@ -632,17 +785,20 @@ public class GameActivity extends AppCompatActivity {
         MapSquare ms = null;
         int pos = 0;
 
-        // loop through all the units and reset move, attack and supression flag
+        // loop through all the units and reset move, attack flag and maybe suppression flag
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
             ms = _mapSquares[ctr];
             u = ms.getUnit();
             if (u != null) {
-                u.setIsSuppressed(false);
                 u.setRemainingMove(u.getMaxMove());
                 u.setHasAttacked(false);
                 _mapSquares[ctr].setUnit(u);
+                if (u.getIsSuppressed()) {
+                    if (_turn - u.getTurnSuppressed() > 1) {
+                        u.setIsSuppressed(false);
+                    }
+                }
             }
-
         }
 
         // if any active unit, deselect it
@@ -658,23 +814,19 @@ public class GameActivity extends AppCompatActivity {
         // clear out action text
         _actionText.setText("");
 
+        // do the computer part of this turn
+        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (OpFor)";
+        _turnText.setText(_turnString);
+
+        // actually do computer part of the turn
+        doOpForTurn();
+
         // increment turn counter
         _turn++;
 
-        // if we player turn, now enemy turn
-        if (_turn % 2 == 0) {
-            _turnPlayer = "OpFor";
-        } else {
-            _turnPlayer = "Your";
-        }
-
-        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " - " + _turnPlayer + " turn";
+        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (You)";
         _turnText.setText(_turnString);
 
-        // if we flipped to ai, need to jump out
-        if (_turnPlayer == "OpFor") {
-            doOpForTurn();
-        }
 
         Log.d(TAG, "Exit doEndTurn");
 
@@ -816,6 +968,7 @@ public class GameActivity extends AppCompatActivity {
                 case Unit.TYPE_MORTAR:
                 case Unit.TYPE_MG:
                     redUnit.setIsSuppressed(true);
+                    redUnit.setTurnSuppressed(_turn);
                     attackMsg += " It was also suppressed (will not be able to attack or move again this turn).";
             }
             // update array
@@ -976,7 +1129,7 @@ public class GameActivity extends AppCompatActivity {
         setUpEnemyUnits();
 
         // set the initial turn text
-        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " - Your turn";
+        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (You)";
         _actionString = "";
 
 
@@ -1017,10 +1170,18 @@ public class GameActivity extends AppCompatActivity {
 
         // #2 if no active unit, the current one is now active (assuming player owns it)
         if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
-            selectUnit(position);
-            _actionText.setText(u.getName() + ": " + u.getRemainingMove() + " move points remaining");
             _activeUnit = u;
             _activeSq = ms;
+            selectUnit(position);
+            if (_activeUnit.getEff() == Unit.EFF_BLACK) {
+                _actionText.setText(_activeUnit.getName() + " is no longer combat effective -- unable to move or attack.");
+                _activeUnit = null;
+                _activeSq = null;
+                deselectUnit(position);
+                return;
+            }
+            _actionText.setText(u.getName() + ": " + u.getRemainingMove() + " move points remaining");
+
             return;
         }
 
