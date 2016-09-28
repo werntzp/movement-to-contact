@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Movement to Contact</string>
-    <string name="app_info">Version 1.0 - Preston Werntz werntzp@hotmail.com</string>
+    <string name="app_info">Version 1.0 - October 2016</string>
     <string name="title_activity_help">HelpActivity</string>
-    <string name="mtc">Movement to contact is a type of offensive operation designed to develop the situation and establish or regain contact. A commander conducts this type of offensive operation when the tactical situation is not clear or when the enemy has broken contact. A properly executed movement to contact develops the combat situation and maintains the commander\'s freedom of action after contact is gained. This flexibility is essential in maintaining the initiative.</string>
 </resources>

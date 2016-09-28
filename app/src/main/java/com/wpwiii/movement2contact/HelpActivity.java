@@ -9,6 +9,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.webkit.WebView;
 
 public class HelpActivity extends AppCompatActivity {
 
@@ -17,9 +18,10 @@ public class HelpActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_help);
 
-        // add text about game in here
-        TextView textView = (TextView) findViewById(R.id.textView4);
-        textView.setText(R.string.mtc);
+        // get the webview and load up local html page
+        WebView wv = (WebView) findViewById(R.id.webView1);
+        wv.loadUrl("file:///android_asset/help.html");
+
 
         // add button to close out activity
         // add onclick to help button
