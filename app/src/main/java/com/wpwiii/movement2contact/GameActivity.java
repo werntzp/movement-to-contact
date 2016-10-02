@@ -662,7 +662,6 @@ public class GameActivity extends AppCompatActivity {
         Unit redUnit = fromSq.getUnit();
         Unit blueUnit = toSq.getUnit();
 
-        // attack!
         // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
         attackNum = redUnit.getAttackNumber();
         switch (toSq.getTerrainType()) {
@@ -687,7 +686,27 @@ public class GameActivity extends AppCompatActivity {
         pos = getArrayPosforRowCol(fromSq.getRow(), fromSq.getCol());
         v = (ImageView) _mapAdapter.getItem(pos);
         v.setImageResource(getUnitIcon(redUnit));
-        selectUnit(pos);
+        selectUnit(pos, Color.BLUE);
+
+
+        // store so we can deselect later
+        final int redUnitPos = pos;
+        final int blueUnitPos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
+
+        // highlight the unit we're attacking
+        selectUnit(blueUnitPos, Color.RED);
+
+        Utils.delay(2, new Utils.DelayCallback() {
+            @Override
+            public void afterDelay() {
+                deselectUnit(redUnitPos);
+                deselectUnit(blueUnitPos);
+            }
+        });
+
+        // pick a sound to play
+        MediaPlayer mediaPlayer = MediaPlayer.create(this, getSound(redUnit));
+        mediaPlayer.start();
 
         // determine whether hit took place and then any damage
         if (roll <= attackNum) {
@@ -729,13 +748,6 @@ public class GameActivity extends AppCompatActivity {
         redUnit.setHasAttacked(true);
         redUnit.setIsVisible(true);
 
-        // deselect the red unit
-        pos = getArrayPosforRowCol(fromSq.getRow(), fromSq.getCol());
-        deselectUnit(pos);
-
-        // pick a sound to play
-        MediaPlayer mediaPlayer = MediaPlayer.create(this, getSound(redUnit));
-        mediaPlayer.start();
 
     }
 
@@ -759,6 +771,12 @@ public class GameActivity extends AppCompatActivity {
         int damage = 0;
         String attackMsg = "";
         ImageView v = null;
+        Button endTurnButton = (Button) findViewById(R.id.button1);
+
+        // disable end turn button
+        endTurnButton.setBackgroundColor(Color.parseColor("#545858"));
+        endTurnButton.setTextColor(Color.parseColor("#c0c0c0"));
+        endTurnButton.setEnabled(false);
 
         // loop through map looking for enemy units
 
@@ -839,13 +857,6 @@ public class GameActivity extends AppCompatActivity {
                     // make the attackimg unit visible and set their attacked flag
                     redUnit.setHasAttacked(true);
                     redUnit.setIsVisible(true);
-                    // pick a sound to play
-                    MediaPlayer mediaPlayer = MediaPlayer.create(this, getSound(redUnit));
-                    mediaPlayer.start();
-                    // release media player
-                    mediaPlayer.reset();
-                    mediaPlayer.release();
-                    mediaPlayer = null;
                 }
 
                 // now, figure out movement -- if they just attacked, don't move
@@ -857,11 +868,18 @@ public class GameActivity extends AppCompatActivity {
 
                 }
 
+                Utils.delay(3, new Utils.DelayCallback() {
+                    @Override
+                    public void afterDelay() {
+                        // do nothing but just want to wait for a few seconds
+                    }
+                });
 
 
             }
 
         }
+
 
         return;
 
@@ -877,6 +895,7 @@ public class GameActivity extends AppCompatActivity {
         Unit u = null;
         MapSquare ms = null;
         int pos = 0;
+        final Button endTurnButton = (Button) findViewById(R.id.button1);
 
         // loop through all the units and reset move, attack flag and maybe suppression flag
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
@@ -914,12 +933,22 @@ public class GameActivity extends AppCompatActivity {
         // actually do computer part of the turn
         doOpForTurn();
 
+
+        Utils.delay(2, new Utils.DelayCallback() {
+            @Override
+            public void afterDelay() {
+                // turn button back on
+                endTurnButton.setBackgroundColor(Color.parseColor("#000000"));
+                endTurnButton.setTextColor(Color.parseColor("#ffff00"));
+                endTurnButton.setEnabled(true);
+            }
+        });
+
         // increment turn counter
         _turn++;
 
         _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (You)";
         _turnText.setText(_turnString);
-
 
         Log.d(TAG, "Exit doEndTurn");
 
@@ -1016,6 +1045,18 @@ public class GameActivity extends AppCompatActivity {
             v.setImageResource(toSq.getTerrainType());
         }
 
+        // also, highight it in red
+        selectUnit(pos, Color.RED);
+        final int unitPos = pos;
+
+        Utils.delay(2, new Utils.DelayCallback() {
+            @Override
+            public void afterDelay() {
+                deselectUnit(unitPos);
+
+            }
+        });
+
         // next, our unit has attacked, so set property
         blueUnit.setHasAttacked(true);
 
@@ -1066,6 +1107,7 @@ public class GameActivity extends AppCompatActivity {
             }
             // update array
             toSq.setUnit(redUnit);
+            _mapSquares[pos] = toSq;
         }
         else {
             attackMsg = "The unit was attacked, but did not suffer any damage.";
@@ -1077,16 +1119,11 @@ public class GameActivity extends AppCompatActivity {
             v.setImageResource(toSq.getTerrainType());
             attackMsg = "The unit was hit, took damage and is no longer combat effective.";
             toSq.setUnit(null);
+            _mapSquares[pos] = toSq;
 
         }
 
         _actionText.setText(attackMsg);
-
-
-        // release media player
-//        mediaPlayer.reset();
-  //      mediaPlayer.release();
-    //    mediaPlayer = null;
 
         Log.d(TAG, "Exit doAttack");
 
@@ -1167,10 +1204,10 @@ public class GameActivity extends AppCompatActivity {
     // ==========================
     // select unit in map square by changing border
     // ==========================
-    void selectUnit(int pos) {
+    void selectUnit(int pos, int color) {
         ImageView v = (ImageView) _mapAdapter.getItem(pos);
         v.setPadding(5,5,5,5);
-        v.setBackgroundColor(Color.BLUE);
+        v.setBackgroundColor(color);
     }
 
     // ==========================
@@ -1265,7 +1302,7 @@ public class GameActivity extends AppCompatActivity {
         if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
             _activeUnit = u;
             _activeSq = ms;
-            selectUnit(position);
+            selectUnit(position, Color.BLUE);
             if (_activeUnit.getEff() == Unit.EFF_BLACK) {
                 _actionText.setText(_activeUnit.getName() + " is no longer combat effective -- unable to move or attack.");
                 _activeUnit = null;
@@ -1289,7 +1326,7 @@ public class GameActivity extends AppCompatActivity {
                     return;
                 }
                 deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
-                selectUnit(position);
+                selectUnit(position, Color.BLUE);
                 _actionText.setText(u.getName() + ": " + u.getRemainingMove() + " move points remaining");
                 _activeUnit = u;
                 _activeSq = ms;
@@ -1346,14 +1383,14 @@ public class GameActivity extends AppCompatActivity {
             // (a) if friendly, switch focus
             if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
                 deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
-                selectUnit(position);
+                selectUnit(position, Color.BLUE);
                 _activeUnit = u;
                 _activeSq = ms;
                 _actionText.setText(_activeUnit.getName() + " has " + _activeUnit.getRemainingMove() + " move points remaining");
                 return;
             }
             // (b) if enemy there and in range, attack
-            if ((_activeSq != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+            if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
                 doAttack(_activeSq, ms);
                 return;
             }

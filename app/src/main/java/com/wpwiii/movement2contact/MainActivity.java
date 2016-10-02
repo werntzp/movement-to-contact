@@ -13,6 +13,19 @@ public class MainActivity extends AppCompatActivity {
     MediaPlayer _mediaPlayer = null;
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        try {
+            _mediaPlayer.start();
+        }
+        catch (Exception e) {
+            // media player failed, so kick it on again
+            _mediaPlayer = MediaPlayer.create(this, R.raw.holst);
+            _mediaPlayer.start();
+        }
+    }
+
+    @Override
     protected void onRestart() {
         super.onRestart();
         try {
@@ -27,11 +40,24 @@ public class MainActivity extends AppCompatActivity {
 
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        try {
+            _mediaPlayer.reset();
+            _mediaPlayer.release();
+        }
+        catch (Exception e) {
+            // do nothing
+        }
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         _mediaPlayer = MediaPlayer.create(this, R.raw.holst);
+        _mediaPlayer.setLooping(true);
         _mediaPlayer.start();
 
         // disable the resume button if no saved game
@@ -39,13 +65,6 @@ public class MainActivity extends AppCompatActivity {
         resumeButton.setEnabled(false);
         resumeButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                try {
-                    _mediaPlayer.reset();
-                    _mediaPlayer.release();
-                }
-                catch (Exception e) {
-                    // do nothing
-                }
                 Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
                 myIntent.putExtra("NEW_GAME", false);
                 startActivity(myIntent);
@@ -56,13 +75,6 @@ public class MainActivity extends AppCompatActivity {
         Button newButton = (Button) findViewById(R.id.button1);
         newButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
-                try {
-                    _mediaPlayer.reset();
-                    _mediaPlayer.release();
-                }
-                catch (Exception e) {
-                    // do nothing
-                }
                 Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
                 myIntent.putExtra("NEW_GAME", Boolean.TRUE);
                 startActivity(myIntent);
