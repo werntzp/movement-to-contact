@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import android.media.MediaPlayer;
-import java.util.concurrent.TimeUnit;
+import android.media.AudioManager;
 import android.os.Handler;
 
 class Utils {
@@ -228,6 +228,12 @@ public class GameActivity extends AppCompatActivity {
     private Unit _activeUnit = null;
     private MapSquare _activeSq = null;
     private int _turn = 1;
+    MediaPlayer _mpInfPlatoon = null;
+    MediaPlayer _mpInfSquad = null;
+    MediaPlayer _mpMG = null;
+    MediaPlayer _mpMortar = null;
+    MediaPlayer _mpSniper = null;
+
 
     // ===========================
     // getArrayPosforRowCol
@@ -388,7 +394,7 @@ public class GameActivity extends AppCompatActivity {
         }
 
         // all enemy units start out not visible
-        u.setIsVisible(true);
+        u.setIsVisible(false);
 
         // get the actual position
         pos = getArrayPosforRowCol(row, col);
@@ -541,9 +547,9 @@ public class GameActivity extends AppCompatActivity {
 
 
     // ===========================
-    // getSound
+    // playSound
     // ===========================
-    int getSound(Unit u) {
+    int playSound(Unit u) {
 
         Log.d(TAG, "Enter getSound");
 
@@ -551,23 +557,23 @@ public class GameActivity extends AppCompatActivity {
 
         switch (u.getType()) {
             case Unit.TYPE_HQ:
-                soundId = R.raw.inf_squad;
+                _mpInfSquad.start();
                 break;
             case Unit.TYPE_MG:
-                soundId = R.raw.mg;
+                _mpMG.start();
                 break;
             case Unit.TYPE_MORTAR:
-                soundId = R.raw.mortar;
+                _mpMortar.start();
                 break;
             case Unit.TYPE_SNIPER:
-                soundId = R.raw.sniper;
+                _mpSniper.start();
                 break;
             default:
                 if (u.getSize() == Unit.SIZE_PLATOON) {
-                    soundId = R.raw.inf_platoon;
+                    _mpInfPlatoon.start();
                 }
                 else {
-                    soundId = R.raw.inf_squad;
+                    _mpInfSquad.start();
                 }
         }
 
@@ -705,8 +711,7 @@ public class GameActivity extends AppCompatActivity {
         });
 
         // pick a sound to play
-        MediaPlayer mediaPlayer = MediaPlayer.create(this, getSound(redUnit));
-        mediaPlayer.start();
+        playSound(redUnit);
 
         // determine whether hit took place and then any damage
         if (roll <= attackNum) {
@@ -1032,6 +1037,7 @@ public class GameActivity extends AppCompatActivity {
         int roll = 0;
         int damage = 0;
         String attackMsg = "";
+        int secs = 2;
 
         // first, if enemy wasn't visible, it now is, so draw it
         pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
@@ -1048,14 +1054,6 @@ public class GameActivity extends AppCompatActivity {
         // also, highight it in red
         selectUnit(pos, Color.RED);
         final int unitPos = pos;
-
-        Utils.delay(2, new Utils.DelayCallback() {
-            @Override
-            public void afterDelay() {
-                deselectUnit(unitPos);
-
-            }
-        });
 
         // next, our unit has attacked, so set property
         blueUnit.setHasAttacked(true);
@@ -1080,8 +1078,7 @@ public class GameActivity extends AppCompatActivity {
         Log.d(TAG, "attack roll: " + Integer.toString(roll));
 
         // pick a sound to play
-        MediaPlayer mediaPlayer = MediaPlayer.create(this, getSound(blueUnit));
-        mediaPlayer.start();
+        playSound(blueUnit);
 
         // determine whether hit took place and then any damage
         if (roll <= attackNum) {
@@ -1120,8 +1117,26 @@ public class GameActivity extends AppCompatActivity {
             attackMsg = "The unit was hit, took damage and is no longer combat effective.";
             toSq.setUnit(null);
             _mapSquares[pos] = toSq;
+            secs = 1;
 
         }
+
+        /*
+        try {
+            Thread.sleep(1000);
+        }
+        catch (Exception e) {
+            // do nothing
+        }
+        */
+
+        Utils.delay(secs, new Utils.DelayCallback() {
+            @Override
+            public void afterDelay() {
+                deselectUnit(unitPos);
+
+            }
+        });
 
         _actionText.setText(attackMsg);
 
@@ -1261,7 +1276,6 @@ public class GameActivity extends AppCompatActivity {
         // set the initial turn text
         _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (You)";
         _actionString = "";
-
 
     }
 
@@ -1418,6 +1432,7 @@ public class GameActivity extends AppCompatActivity {
 
     }
 
+
     // ===========================
     // onCreate
     // ===========================
@@ -1426,12 +1441,50 @@ public class GameActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        // setu p the media players needed
+        _mpInfPlatoon = MediaPlayer.create(this, R.raw.inf_platoon);
+        _mpInfSquad = MediaPlayer.create(this, R.raw.inf_squad);
+        _mpMG = MediaPlayer.create(this, R.raw.mg);
+        _mpMortar = MediaPlayer.create(this, R.raw.mortar);
+        _mpSniper = MediaPlayer.create(this, R.raw.sniper);
+
         setContentView(R.layout.activity_game);
         Button buttonEndTurn = (Button) findViewById(R.id.button1);
+        // button click
+        buttonEndTurn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                doEndTurn();
+
+            }
+        });
 
         // get the two textviews for status
         _turnText = (TextView) findViewById(R.id.textView2);
         _actionText = (TextView) findViewById(R.id.textView8);
+
+        // set the mapadapter to build out the initial map
+        _gridView = (GridView) findViewById(R.id.gridView1);
+
+        // set the long press
+        _gridView.setOnItemLongClickListener(new OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View v,
+                                           int position, long id) {
+                Log.d(TAG, "LongClick at position: " + Integer.toString(position));
+                // TODO: Pop up dialog with terrain and/or unit details
+                return true;
+            }
+        });
+
+        // set the onlick
+        _gridView.setOnItemClickListener(new OnItemClickListener() {
+            public void onItemClick(AdapterView<?> parent, View v,
+                                    int position, long id) {
+                Log.d(TAG, "Clicked on position: " + Integer.toString(position));
+                doClick(v, position);
+
+            }
+        });
 
         // new game?
         if (_myIntent != null) {
@@ -1445,8 +1498,6 @@ public class GameActivity extends AppCompatActivity {
             newGame();
         }
 
-        // set the mapadapter to build out the initial map
-        _gridView = (GridView) findViewById(R.id.gridView1);
         // pass in the array of image ids
         _mapAdapter.setImageArray(_imageIds);
         _gridView.setAdapter(_mapAdapter);
@@ -1455,35 +1506,6 @@ public class GameActivity extends AppCompatActivity {
         _turnText.setText(_turnString);
         _actionText.setText(_actionString);
 
-        // set the long press
-        _gridView.setOnItemLongClickListener(new OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View v,
-                                           int position, long id) {
-                Log.d(TAG, "LongClick at position: " + Integer.toString(position));
-                // TODO: Pop up dialog with terrain and/or unit details
-                return true;
-            }
-        });
-
-
-        // set the onlick
-        _gridView.setOnItemClickListener(new OnItemClickListener() {
-            public void onItemClick(AdapterView<?> parent, View v,
-                                    int position, long id) {
-                Log.d(TAG, "Clicked on position: " + Integer.toString(position));
-                doClick(v, position);
-
-            }
-        });
-
-        // button click
-        buttonEndTurn.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                doEndTurn();
-
-            }
-        });
 
     }
 }
