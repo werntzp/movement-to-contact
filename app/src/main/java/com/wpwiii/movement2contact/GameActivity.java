@@ -249,6 +249,26 @@ public class GameActivity extends AppCompatActivity {
     }
 
 
+
+    // ===========================
+    // getHQUnitMapSquare
+    // ===========================
+    MapSquare getHQUnitMapSquare() {
+
+        int pos = 0;
+        MapSquare ms = null;
+        Unit u = null;
+
+        for (pos = 0; pos < MAX_ARRAY; pos++) {
+            ms = _mapSquares[pos];
+            u = ms.getUnit();
+            if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (u.getType() == Unit.TYPE_HQ)) {
+                break;
+            }
+        }
+        return ms;
+    }
+
     // ===========================
     // getUnitIcon
     // ===========================
@@ -686,6 +706,7 @@ public class GameActivity extends AppCompatActivity {
         ImageView v = null;
         Unit redUnit = fromSq.getUnit();
         Unit blueUnit = toSq.getUnit();
+        MapSquare msHQ = null;
 
         // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
         attackNum = redUnit.getAttackNumber();
@@ -712,7 +733,6 @@ public class GameActivity extends AppCompatActivity {
         v = (ImageView) _mapAdapter.getItem(pos);
         v.setImageResource(getUnitIcon(redUnit));
         selectUnit(pos, Color.BLUE);
-
 
         // store so we can deselect later
         final int redUnitPos = pos;
@@ -749,9 +769,22 @@ public class GameActivity extends AppCompatActivity {
             switch (redUnit.getType()) {
                 case Unit.TYPE_SNIPER:
                 case Unit.TYPE_MG:
-                    blueUnit.setIsSuppressed(true);
-                    blueUnit.setTurnSuppressed(_turn);
-                    attackMsg += " It was also suppressed (will not be able to attack or move again this turn).";
+                    // snipers and mg can suppress, but if target unit is HQ unit or adjacent to HQ unit, no suppression occurs
+                    if (blueUnit.getType() == Unit.TYPE_HQ) {
+                        // no suppression
+                    }
+                    else {
+                        msHQ = getHQUnitMapSquare();
+                        if (isAdjacent(toSq, msHQ)) {
+                            // no suppression
+                        }
+                        else {
+                            blueUnit.setIsSuppressed(true);
+                            blueUnit.setTurnSuppressed(_turn);
+                            attackMsg += " It was also suppressed (will not be able to attack or move again this turn).";
+                        }
+                    }
+
             }
             // update array
             pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
@@ -918,6 +951,7 @@ public class GameActivity extends AppCompatActivity {
 
         Unit u = null;
         MapSquare ms = null;
+        MapSquare msHQ = null;
         int pos = 0;
         final Button endTurnButton = (Button) findViewById(R.id.button1);
 
@@ -935,6 +969,17 @@ public class GameActivity extends AppCompatActivity {
                         // if no longer suppressed, need to flip icon back
                         ImageView v = (ImageView) _mapAdapter.getItem(getArrayPosforRowCol(ms.getRow(), ms.getCol()));
                         v.setImageResource(getUnitIcon(u));
+                    }
+                    else {
+                        // code here to see if hq unit adjacent to suppressed unit; if it is, remove the suppression right away
+                        msHQ = getHQUnitMapSquare();
+                        if (isAdjacent(msHQ, ms)) {
+                            u.setIsSuppressed(false);
+                            // if no longer suppressed, need to flip icon back
+                            ImageView v = (ImageView) _mapAdapter.getItem(getArrayPosforRowCol(ms.getRow(), ms.getCol()));
+                            v.setImageResource(getUnitIcon(u));
+                        }
+
                     }
                 }
             }
