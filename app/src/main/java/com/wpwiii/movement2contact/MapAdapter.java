@@ -36,6 +36,12 @@ public class MapAdapter extends BaseAdapter {
         return 0;
     }
 
+    // method to update internal array
+    public void setItem(Object v, int img, int pos) {
+        _imageViews[pos] = (ImageView) v;
+        _mThumbIds[pos] = img;
+    }
+
     // method to accept incoming array of image ids
     public void setImageArray(Integer[] val) {
         _mThumbIds = val;
