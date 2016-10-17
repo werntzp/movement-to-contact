@@ -703,6 +703,7 @@ public class GameActivity extends AppCompatActivity {
         int damage = 0;
         String attackMsg = "";
         int pos = 0;
+        int img = 0;
         ImageView v = null;
         Unit redUnit = fromSq.getUnit();
         Unit blueUnit = toSq.getUnit();
@@ -731,7 +732,9 @@ public class GameActivity extends AppCompatActivity {
         // since this unit is attacking, they now get shown (whether hidden or not)
         pos = getArrayPosforRowCol(fromSq.getRow(), fromSq.getCol());
         v = (ImageView) _mapAdapter.getItem(pos);
-        v.setImageResource(getUnitIcon(redUnit));
+        img = getUnitIcon(redUnit);
+        v.setImageResource(img);
+        _mapAdapter.setItem(v, img, pos);
         selectUnit(pos, Color.BLUE);
 
         // store so we can deselect later
@@ -791,7 +794,9 @@ public class GameActivity extends AppCompatActivity {
             _mapSquares[pos].setUnit(blueUnit);
             // also, grab the imageview and update the image (especially if effectiveness changed)
             v = (ImageView) _mapAdapter.getItem(pos);
-            v.setImageResource(getUnitIcon(blueUnit));
+            img = getUnitIcon(blueUnit);
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
 
         } else {
             attackMsg = blueUnit.getName() + " was attacked, but did not suffer any damage.";
@@ -954,6 +959,7 @@ public class GameActivity extends AppCompatActivity {
         MapSquare msHQ = null;
         int pos = 0;
         final Button endTurnButton = (Button) findViewById(R.id.button1);
+        int img = 0;
 
         // loop through all the units and reset move, attack flag and maybe suppression flag
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
@@ -967,17 +973,23 @@ public class GameActivity extends AppCompatActivity {
                     if (_turn - u.getTurnSuppressed() > 1) {
                         u.setIsSuppressed(false);
                         // if no longer suppressed, need to flip icon back
-                        ImageView v = (ImageView) _mapAdapter.getItem(getArrayPosforRowCol(ms.getRow(), ms.getCol()));
-                        v.setImageResource(getUnitIcon(u));
+                        pos = getArrayPosforRowCol(ms.getRow(), ms.getCol());
+                        ImageView v = (ImageView) _mapAdapter.getItem(pos);
+                        img = getUnitIcon(u);
+                        v.setImageResource(img);
+                        _mapAdapter.setItem(v, img, pos);
                     }
                     else {
-                        // code here to see if hq unit adjacent to suppressed unit; if it is, remove the suppression right away
+                        // code here to see if hq unit adjacent to suppressed unit; if it is, remove the suppression right away (if a player unit)
                         msHQ = getHQUnitMapSquare();
-                        if (isAdjacent(msHQ, ms)) {
+                        if ((isAdjacent(msHQ, ms) && (u.getOwner() == Unit.OWNER_PLAYER)) ) {
                             u.setIsSuppressed(false);
                             // if no longer suppressed, need to flip icon back
-                            ImageView v = (ImageView) _mapAdapter.getItem(getArrayPosforRowCol(ms.getRow(), ms.getCol()));
-                            v.setImageResource(getUnitIcon(u));
+                            pos = getArrayPosforRowCol(ms.getRow(), ms.getCol());
+                            ImageView v = (ImageView) _mapAdapter.getItem(pos);
+                            img = getUnitIcon(u);
+                            v.setImageResource(img);
+                            _mapAdapter.setItem(v, img, pos);
                         }
 
                     }
@@ -1041,6 +1053,7 @@ public class GameActivity extends AppCompatActivity {
         MapSquare ms = null;
         int icon = 0;
         ImageView v = null;
+        int img = 0;
 
         // first, figure out which array positions we're talking about
         posFrom = getArrayPosforRowCol(fromSq.getRow(), fromSq.getCol());
@@ -1059,7 +1072,9 @@ public class GameActivity extends AppCompatActivity {
             v = (ImageView) _mapAdapter.getItem(posFrom);
             v.setPadding(2,2,2,2);
             v.setBackgroundColor(Color.BLACK);
-            v.setImageResource(ms.getTerrainType());
+            img = ms.getTerrainType();
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, posFrom);
 
             // now drop that unit into new position
             ms = _mapSquares[posTo];
@@ -1071,7 +1086,9 @@ public class GameActivity extends AppCompatActivity {
             v = (ImageView) _mapAdapter.getItem(posTo);
             v.setPadding(5,5,5,5);
             v.setBackgroundColor(Color.BLUE);
-            v.setImageResource(getUnitIcon(u));
+            img = getUnitIcon(u);
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, posTo);
 
             // now set active
             _activeUnit = u;
@@ -1105,17 +1122,21 @@ public class GameActivity extends AppCompatActivity {
         int damage = 0;
         String attackMsg = "";
         int secs = 2;
+        int img = 0;
 
         // first, if enemy wasn't visible, it now is, so draw it
         pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
         v = (ImageView) _mapAdapter.getItem(pos);
 
         try {
-            icon = getUnitIcon(redUnit);
-            v.setImageResource(icon);
+            img = getUnitIcon(redUnit);
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
         }
         catch (Exception e) {
-            v.setImageResource(toSq.getTerrainType());
+            img = toSq.getTerrainType();
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
         }
 
         // also, highight it in red
@@ -1180,7 +1201,9 @@ public class GameActivity extends AppCompatActivity {
 
         // if combat effectiveness now black, just get rid of it
         if (redUnit.getEff() == Unit.EFF_BLACK) {
-            v.setImageResource(toSq.getTerrainType());
+            img = toSq.getTerrainType();
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
             attackMsg = "The unit was hit, took damage and is no longer combat effective.";
             toSq.setUnit(null);
             _mapSquares[pos] = toSq;
@@ -1466,7 +1489,7 @@ public class GameActivity extends AppCompatActivity {
                 }
                 // if enemy not visible, we stumbled onto them so they get a first shot
                 if (ms.getUnit().getIsVisible() == false) {
-                    // TODO: enemy gets first shot in
+                    doOpForAttack(ms, _activeSq);
                 }
                 if (_activeUnit.getHasAttacked() == false) {
                     doAttack(_activeSq, ms);
