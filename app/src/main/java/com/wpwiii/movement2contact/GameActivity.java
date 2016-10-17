@@ -256,6 +256,26 @@ public class GameActivity extends AppCompatActivity {
 
         int img = 0;
 
+        // first thing, if human player and unit is suppressed, grab that icon and just jump out
+        if ((u.getIsSuppressed()) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            switch (u.getType()) {
+                case Unit.TYPE_INF:
+                    img = R.drawable.inf_platoon_suppressed;
+                    break;
+                case Unit.TYPE_HQ:
+                    img = R.drawable.hq_section_suppressed;
+                    break;
+                case Unit.TYPE_MG:
+                    img = R.drawable.mg_team_suppressed;
+                    break;
+                case Unit.TYPE_MORTAR:
+                    img = R.drawable.mortar_section_suppressed;
+                    break;
+            }
+            return img;
+
+        }
+
         // make decisions for icon based on size and type
         if (u.getType() == Unit.TYPE_INF) {
             if (u.getSize() == Unit.SIZE_SQUAD) {
@@ -291,7 +311,6 @@ public class GameActivity extends AppCompatActivity {
                     img = R.drawable.mg_team_green;
             }
         }
-
         if (u.getType() == Unit.TYPE_MORTAR) {
             switch (u.getEff()) {
                 case Unit.EFF_AMBER:
@@ -913,6 +932,9 @@ public class GameActivity extends AppCompatActivity {
                 if (u.getIsSuppressed()) {
                     if (_turn - u.getTurnSuppressed() > 1) {
                         u.setIsSuppressed(false);
+                        // if no longer suppressed, need to flip icon back
+                        ImageView v = (ImageView) _mapAdapter.getItem(getArrayPosforRowCol(ms.getRow(), ms.getCol()));
+                        v.setImageResource(getUnitIcon(u));
                     }
                 }
             }
