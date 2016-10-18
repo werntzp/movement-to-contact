@@ -463,7 +463,7 @@ public class GameActivity extends AppCompatActivity {
         double straightSteps = max - min;
         double distance = Math.floor(Math.sqrt(2) * diagonalSteps + straightSteps);
 
-        Log.d(TAG, "Exit getDistanceBetweenSquares. Distance = " + distance);
+        //Log.d(TAG, "Exit getDistanceBetweenSquares. Distance = " + distance);
 
         return distance;
 
@@ -736,6 +736,7 @@ public class GameActivity extends AppCompatActivity {
         v.setImageResource(img);
         _mapAdapter.setItem(v, img, pos);
         selectUnit(pos, Color.BLUE);
+        _mapAdapter.notifyDataSetChanged();
 
         // store so we can deselect later
         final int redUnitPos = pos;
@@ -744,6 +745,7 @@ public class GameActivity extends AppCompatActivity {
         // highlight the unit we're attacking
         selectUnit(blueUnitPos, Color.RED);
 
+        // after a 2 second delay, deselect the unit
         Utils.delay(2, new Utils.DelayCallback() {
             @Override
             public void afterDelay() {
@@ -797,6 +799,7 @@ public class GameActivity extends AppCompatActivity {
             img = getUnitIcon(blueUnit);
             v.setImageResource(img);
             _mapAdapter.setItem(v, img, pos);
+            _mapAdapter.notifyDataSetChanged();
 
         } else {
             attackMsg = blueUnit.getName() + " was attacked, but did not suffer any damage.";
@@ -810,6 +813,15 @@ public class GameActivity extends AppCompatActivity {
         redUnit.setHasAttacked(true);
         redUnit.setIsVisible(true);
 
+        // freeze the ui
+        /*
+        try {
+            Thread.sleep(2000);
+        }
+        catch (Exception e) {
+            // do nothing
+        }
+        */
 
     }
 
@@ -824,15 +836,20 @@ public class GameActivity extends AppCompatActivity {
         int row = 0;
         int col = 0;
         boolean justAttacked = false;
+        boolean stayVisible = false;
         int adjRow = 0;
         int adjCol = 0;
         int pos = 0;
         Unit blueUnit = null;
+        int result = 0;
         int attackNum = 0;
+        double distanceActual = 0.0;
+        double distanceAllowed = 2.0;
         int roll = 0;
         int damage = 0;
         String attackMsg = "";
         ImageView v = null;
+        int img = 0;
         Button endTurnButton = (Button) findViewById(R.id.button1);
 
         // disable end turn button
@@ -930,15 +947,79 @@ public class GameActivity extends AppCompatActivity {
 
                 }
 
-                Utils.delay(3, new Utils.DelayCallback() {
-                    @Override
-                    public void afterDelay() {
-                        // do nothing but just want to wait for a few seconds
-                    }
-                });
-
-
             }
+
+        }
+
+        // now, loop through all the units again to figure out which enmy units should get hidden off the map again
+        // they stay visible if adjacent to friendly unit or within 2 of hq unit, otherwise 50% chance they are able to slip out of sight (but still in same square)
+        for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
+
+            redUnit = _mapSquares[ctr].getUnit();
+            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (redUnit.getIsVisible())) {
+                // see if adjacent to any friendly forces
+                fromSq = _mapSquares[ctr];
+                row = fromSq.getRow();
+                col = fromSq.getCol();
+                stayVisible = false;
+
+                Log.d(TAG, "Checking for redUnit at " + Integer.toString(row) + ", " + Integer.toString(col));
+
+                // first, randomly figure out if they should stay visible (2 in 10 chance)
+                result = getRandomNumber(10, 1);
+                Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
+                if (result <= 2) {
+                    stayVisible = true;
+                }
+                else {
+                    stayVisible = false;
+                }
+
+                for (int x = 0; x < MAX_ARRAY; x++) {
+                    toSq = _mapSquares[x];
+                    blueUnit = toSq.getUnit();
+                    if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER)) {
+                        // 1 for all units, except hq which is 2
+                        if (blueUnit.getType() == Unit.TYPE_HQ) {
+                            distanceAllowed = 2.0;
+                            Log.d(TAG, "blueUnit is HQ, so distance can be up to 2");
+                        }
+                        else {
+                            distanceAllowed = 1.0;
+                        }
+                        // see how far from enemy unit
+                        distanceActual = getDistanceBetweenSquares(row, col, toSq.getRow(), toSq.getCol());
+                        Log.d(TAG, "distanceActual is " + Double.toString(distanceActual));
+                        if ((distanceActual <= distanceAllowed)) {
+                            // yes, enemy should remain visible, so do nothing
+                            Log.d(TAG, "redUnit at " + Integer.toString(row) + ", " + Integer.toString(col) + " should remain visible");
+                            stayVisible = true;
+                            break;
+                        }
+
+                    }
+
+                }
+
+                // put a delay in here on the ui so they can see the unit
+                /*
+                try {
+                    Thread.sleep(3000);
+                }
+                catch (Exception e) {
+                    // do nothing
+                }
+                */
+
+                // we're out of loop, so if we should not be visible, swap them out for terrain
+                if (!stayVisible) {
+                    v = (ImageView) _mapAdapter.getItem(ctr);
+                    img = fromSq.getTerrainType();
+                    v.setImageResource(img);
+                    _mapAdapter.setItem(v, img, pos);
+                }
+
+                }
 
         }
 
