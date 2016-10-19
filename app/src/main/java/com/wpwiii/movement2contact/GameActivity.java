@@ -453,7 +453,7 @@ public class GameActivity extends AppCompatActivity {
     // ==========================
     double getDistanceBetweenSquares(int x1, int y1, int x2, int y2) {
 
-        Log.d(TAG, "Enter getDistanceBetweenSquares");
+        //Log.d(TAG, "Enter getDistanceBetweenSquares");
 
         double dx = Math.abs(x2 - x1);
         double dy = Math.abs(y2 - y1);
@@ -813,6 +813,10 @@ public class GameActivity extends AppCompatActivity {
         redUnit.setHasAttacked(true);
         redUnit.setIsVisible(true);
 
+        // update the array
+        fromSq.setUnit(redUnit);
+        _mapSquares[redUnitPos] = fromSq;
+
         // freeze the ui
         /*
         try {
@@ -852,12 +856,15 @@ public class GameActivity extends AppCompatActivity {
         int img = 0;
         Button endTurnButton = (Button) findViewById(R.id.button1);
 
+        Log.d(TAG, "Enter doOpForTurn");
+
         // disable end turn button
         endTurnButton.setBackgroundColor(Color.parseColor("#545858"));
         endTurnButton.setTextColor(Color.parseColor("#c0c0c0"));
         endTurnButton.setEnabled(false);
 
         // loop through map looking for enemy units
+        Log.d(TAG, "About to look through units to see which ones can attack or will move");
 
         // iterate through array
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
@@ -953,6 +960,7 @@ public class GameActivity extends AppCompatActivity {
 
         // now, loop through all the units again to figure out which enmy units should get hidden off the map again
         // they stay visible if adjacent to friendly unit or within 2 of hq unit, otherwise 50% chance they are able to slip out of sight (but still in same square)
+        Log.d(TAG, "About to look through units to see which ones should remain visible or be hidden");
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
 
             redUnit = _mapSquares[ctr].getUnit();
@@ -980,21 +988,24 @@ public class GameActivity extends AppCompatActivity {
                     blueUnit = toSq.getUnit();
                     if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER)) {
                         // 1 for all units, except hq which is 2
+                        distanceAllowed = 1.0;
                         if (blueUnit.getType() == Unit.TYPE_HQ) {
                             distanceAllowed = 2.0;
                             Log.d(TAG, "blueUnit is HQ, so distance can be up to 2");
                         }
-                        else {
-                            distanceAllowed = 1.0;
-                        }
+
                         // see how far from enemy unit
                         distanceActual = getDistanceBetweenSquares(row, col, toSq.getRow(), toSq.getCol());
-                        Log.d(TAG, "distanceActual is " + Double.toString(distanceActual));
+                        Log.d(TAG, "distanceActual is " + Double.toString(distanceActual) + ", distanceAllowed is " + Double.toString(distanceAllowed));
                         if ((distanceActual <= distanceAllowed)) {
                             // yes, enemy should remain visible, so do nothing
                             Log.d(TAG, "redUnit at " + Integer.toString(row) + ", " + Integer.toString(col) + " should remain visible");
                             stayVisible = true;
+                            redUnit.setIsVisible(true);
                             break;
+                        }
+                        else {
+                            redUnit.setIsVisible(false);
                         }
 
                     }
@@ -1018,6 +1029,10 @@ public class GameActivity extends AppCompatActivity {
                     v.setImageResource(img);
                     _mapAdapter.setItem(v, img, pos);
                 }
+
+                // update the array
+                fromSq.setUnit(redUnit);
+                _mapSquares[ctr] = fromSq;
 
                 }
 
@@ -1262,7 +1277,8 @@ public class GameActivity extends AppCompatActivity {
             else {
                 attackMsg = "The unit was attacked, but did not suffer any damage.";
             }
-
+            // set the unit to visible since we hit it
+            redUnit.setIsVisible(true);
             // certain types of unit cause supression
             switch (blueUnit.getType()) {
                 case Unit.TYPE_MORTAR:
@@ -1606,8 +1622,21 @@ public class GameActivity extends AppCompatActivity {
             }
             // (b) if enemy there and in range, attack
             if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
-                doAttack(_activeSq, ms);
-                return;
+                // next, need to see if enemy unit visible; if not, only mortar can do recon by fire and attack
+                if (ms.getUnit().getIsVisible()) {
+                    doAttack(_activeSq, ms);
+                    return;
+                }
+                else {
+                    if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
+                        doAttack(_activeSq, ms);
+                        return;
+                    }
+                    else {
+                        // ignore
+                        return;
+                    }
+                }
             }
             else if (_activeSq != null)  {
                 _actionText.setText(_activeUnit.getName() + " is out of range to attack. It must be within " + Integer.toString(_activeUnit.getAttackRange())  + " squares.");
