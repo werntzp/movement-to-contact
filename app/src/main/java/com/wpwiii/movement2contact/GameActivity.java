@@ -1299,7 +1299,16 @@ public class GameActivity extends AppCompatActivity {
             toSq.setUnit(null);
             _mapSquares[pos] = toSq;
             secs = 1;
+            deselectUnit(unitPos);
+        }
+        else {
+            Utils.delay(secs, new Utils.DelayCallback() {
+                @Override
+                public void afterDelay() {
+                    deselectUnit(unitPos);
 
+                }
+            });
         }
 
         /*
@@ -1310,14 +1319,6 @@ public class GameActivity extends AppCompatActivity {
             // do nothing
         }
         */
-
-        Utils.delay(secs, new Utils.DelayCallback() {
-            @Override
-            public void afterDelay() {
-                deselectUnit(unitPos);
-
-            }
-        });
 
         _actionText.setText(attackMsg);
 
