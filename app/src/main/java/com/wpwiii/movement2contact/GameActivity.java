@@ -964,7 +964,7 @@ public class GameActivity extends AppCompatActivity {
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
 
             redUnit = _mapSquares[ctr].getUnit();
-            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (redUnit.getIsVisible())) {
+            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR)) {
                 // see if adjacent to any friendly forces
                 fromSq = _mapSquares[ctr];
                 row = fromSq.getRow();
@@ -1057,6 +1057,9 @@ public class GameActivity extends AppCompatActivity {
         final Button endTurnButton = (Button) findViewById(R.id.button1);
         int img = 0;
 
+        // clear out action text
+        _actionText.setText("");
+
         // loop through all the units and reset move, attack flag and maybe suppression flag
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
             ms = _mapSquares[ctr];
@@ -1103,16 +1106,8 @@ public class GameActivity extends AppCompatActivity {
             _activeUnit = null;
         }
 
-        // clear out action text
-        _actionText.setText("");
-
-        // do the computer part of this turn
-        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (OpFor)";
-        _turnText.setText(_turnString);
-
         // actually do computer part of the turn
         doOpForTurn();
-
 
         Utils.delay(2, new Utils.DelayCallback() {
             @Override
@@ -1126,7 +1121,6 @@ public class GameActivity extends AppCompatActivity {
 
         // increment turn counter
         _turn++;
-
         _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (You)";
         _turnText.setText(_turnString);
 
@@ -1683,7 +1677,17 @@ public class GameActivity extends AppCompatActivity {
         // button click
         buttonEndTurn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                doEndTurn();
+                // do the computer part of this turn
+                _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (Computer)";
+                _turnText.setText(_turnString);
+                _turnText.invalidate();
+                // after a 1 second delay, end the turn
+                Utils.delay(1, new Utils.DelayCallback() {
+                    @Override
+                    public void afterDelay() {
+                        doEndTurn();
+                    }
+                });
 
             }
         });
