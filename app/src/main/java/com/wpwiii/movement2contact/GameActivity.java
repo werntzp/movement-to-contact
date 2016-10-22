@@ -1,9 +1,9 @@
 package com.wpwiii.movement2contact;
 
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.app.Activity;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.view.View;
@@ -15,11 +15,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.content.Intent;
 import java.util.Random;
-import com.wpwiii.movement2contact.R;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,11 +28,11 @@ class Utils {
 
     // Delay mechanism
 
-    public interface DelayCallback{
+    interface DelayCallback{
         void afterDelay();
     }
 
-    public static void delay(int secs, final DelayCallback delayCallback){
+    static void delay(int secs, final DelayCallback delayCallback){
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
@@ -50,28 +46,28 @@ class Utils {
 // class for units
 class Unit {
 
-    public static final int OWNER_PLAYER = 0;
-    public static final int OWNER_OPFOR = 1; 
+    static final int OWNER_PLAYER = 0;
+    static final int OWNER_OPFOR = 1;
 
-    public static final int TYPE_INF = 0; 
-    public static final int TYPE_MG = 1; 
-    public static final int TYPE_HQ = 2; 
-    public static final int TYPE_SNIPER = 3; 
-    public static final int TYPE_MORTAR = 4;
+    static final int TYPE_INF = 0;
+    static final int TYPE_MG = 1;
+    static final int TYPE_HQ = 2;
+    static final int TYPE_SNIPER = 3;
+    static final int TYPE_MORTAR = 4;
     
-    public static final int SIZE_SQUAD = 0;
-    public static final int SIZE_PLATOON = 1;
-    public static final int SIZE_SECTION = 2; 
-    public static final int SIZE_TEAM = 3; 
+    static final int SIZE_SQUAD = 0;
+    static final int SIZE_PLATOON = 1;
+    static final int SIZE_SECTION = 2;
+    static final int SIZE_TEAM = 3;
 
-    public static final int EFF_GREEN = 3; 
-    public static final int EFF_AMBER = 2; 
-    public static final int EFF_RED = 1; 
-    public static final int EFF_BLACK = 0;
+    static final int EFF_GREEN = 3;
+    static final int EFF_AMBER = 2;
+    static final int EFF_RED = 1;
+    static final int EFF_BLACK = 0;
 
-    public static final int AGG_VERY = 3;
-    public static final int AGG_SOME = 2;
-    public static final int AGG_NO = 1;
+    static final int AGG_VERY = 3;
+    static final int AGG_SOME = 2;
+    static final int AGG_NO = 1;
 
     private int _type = TYPE_INF; 
     private int _size = SIZE_PLATOON;
@@ -110,64 +106,64 @@ class Unit {
 
     }
 
-    protected void setIsSuppressed(boolean val) { _isSuppressed = val; }
-    protected void setHasAttacked(boolean val) {
+    void setIsSuppressed(boolean val) { _isSuppressed = val; }
+    void setHasAttacked(boolean val) {
         _hasAttacked = val;
     }
-    protected void setRemainingMove(int val) {
+    void setRemainingMove(int val) {
         _remainingMove = val;
     }
-    protected void setIsActive(boolean val) {
+    void setIsActive(boolean val) {
         _isActive = val;
     }
-    protected void setIsVisible(boolean val) {
+    void setIsVisible(boolean val) {
         _isVisible = val;
     }
-    protected void setEff(int val) {
+    void setEff(int val) {
         _eff = val;
     }
-    protected void setTurnSuppressed(int val) { _turnSuppressed = val; }
-    protected void setAggression(int val) { _aggression = val; }
+    void setTurnSuppressed(int val) { _turnSuppressed = val; }
+    void setAggression(int val) { _aggression = val; }
 
-    protected int getAttackNumber() {
+    int getAttackNumber() {
         return _attackNumber;
     }
-    protected boolean getIsSuppressed() {
+    boolean getIsSuppressed() {
         return _isSuppressed;
     }
-    protected boolean getHasAttacked() {
+    boolean getHasAttacked() {
         return _hasAttacked;
     }
-    protected int getAttackRange() {
+    int getAttackRange() {
         return _attackRange;
     }
-    protected int getRemainingMove() {
+    int getRemainingMove() {
         return _remainingMove;
     }
-    protected int getMaxMove() {
+    int getMaxMove() {
         return _maxMove;
     }
-    protected boolean getIsActive() {
+    boolean getIsActive() {
         return _isActive;
     }
-    protected boolean getIsVisible() {
+    boolean getIsVisible() {
         return _isVisible;
     }
-    protected int getType() {
+    int getType() {
         return _type; 
     }
-    protected int getSize() {
+    int getSize() {
         return _size; 
     }
-    protected int getEff() {
+    int getEff() {
         return _eff; 
     }
-    protected int getOwner() {
+    int getOwner() {
         return _owner; 
     }
-    protected String getName() { return _name; }
-    protected int getTurnSuppressed() { return _turnSuppressed; }
-    protected int getAggression() { return _aggression; }
+    String getName() { return _name; }
+    int getTurnSuppressed() { return _turnSuppressed; }
+    int getAggression() { return _aggression; }
 
 }
 
@@ -180,29 +176,29 @@ class MapSquare {
     private int _row = 0;
     private int _col = 0;
 
-    protected void setTerrainType(int val) {
+    void setTerrainType(int val) {
         _terrainType = val;
     }
-    protected void setRow(int val) {
+    void setRow(int val) {
         _row = val;
     }
-    protected void setCol(int val) {
+    void setCol(int val) {
         _col = val;
     }
-    protected void setUnit(Unit val) {
+    void setUnit(Unit val) {
         _unit = val;
     }
 
-    protected Unit getUnit() {
+    Unit getUnit() {
         return _unit;
     }
-    protected int getCol() {
+    int getCol() {
         return _col;
     }
-    protected int getRow() {
+    int getRow() {
         return _row;
     }
-    protected int getTerrainType() {
+    int getTerrainType() {
         return _terrainType;
     }
 
@@ -459,13 +455,11 @@ public class GameActivity extends AppCompatActivity {
         double dy = Math.abs(y2 - y1);
         double min = Math.min(dx, dy);
         double max = Math.max(dx, dy);
-        double diagonalSteps = min;
         double straightSteps = max - min;
-        double distance = Math.floor(Math.sqrt(2) * diagonalSteps + straightSteps);
 
-        //Log.d(TAG, "Exit getDistanceBetweenSquares. Distance = " + distance);
+        //Log.d(TAG, "Exit getDistanceBetweenSquares");
 
-        return distance;
+        return Math.floor(Math.sqrt(2) * min + straightSteps);
 
     }
 
@@ -661,10 +655,8 @@ public class GameActivity extends AppCompatActivity {
 
         Log.d(TAG, "Enter isMapSpotTaken");
 
-        MapSquare ms = null;
-
         // look at map square array to see if a unit already there
-        ms = _mapSquares[getArrayPosforRowCol(row, col)];
+        MapSquare ms = _mapSquares[getArrayPosforRowCol(row, col)];
 
         Log.d(TAG, "Exit isMapSpotTaken");
         return (ms.getUnit() != null);
@@ -847,12 +839,12 @@ public class GameActivity extends AppCompatActivity {
         int col = 0;
         boolean justAttacked = false;
         boolean stayVisible = false;
-        int adjRow = 0;
-        int adjCol = 0;
+        int adjRow;
+        int adjCol;
         int pos = 0;
         Unit blueUnit = null;
-        int result = 0;
-        int attackNum = 0;
+        int result;
+        int attackNum;
         double distanceActual = 0.0;
         double distanceAllowed = 2.0;
         int roll = 0;
@@ -1045,9 +1037,6 @@ public class GameActivity extends AppCompatActivity {
                 }
 
         }
-
-
-        return;
 
     }
 
@@ -1790,8 +1779,12 @@ public class GameActivity extends AppCompatActivity {
         _mpMortar = MediaPlayer.create(this, R.raw.mortar);
         _mpSniper = MediaPlayer.create(this, R.raw.sniper);
 
+        // get the custom font
+        Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
+
         setContentView(R.layout.activity_game);
         Button buttonEndTurn = (Button) findViewById(R.id.button1);
+        buttonEndTurn.setTypeface(tf);
         // button click
         buttonEndTurn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -1812,7 +1805,9 @@ public class GameActivity extends AppCompatActivity {
 
         // get the two textviews for status
         _turnText = (TextView) findViewById(R.id.textView2);
+        _turnText.setTypeface(tf);
         _actionText = (TextView) findViewById(R.id.textView8);
+        _actionText.setTypeface(tf);
 
         // set the mapadapter to build out the initial map
         _gridView = (GridView) findViewById(R.id.gridView1);

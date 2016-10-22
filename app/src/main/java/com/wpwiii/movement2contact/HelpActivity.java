@@ -1,6 +1,7 @@
 package com.wpwiii.movement2contact;
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -18,14 +19,17 @@ public class HelpActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_help);
 
+        // get the custom font
+        Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
+
         // get the webview and load up local html page
         WebView wv = (WebView) findViewById(R.id.webView1);
         wv.loadUrl("file:///android_asset/help.html");
 
-
         // add button to close out activity
         // add onclick to help button
         Button okButton = (Button) findViewById(R.id.button6);
+        okButton.setTypeface(tf);
         okButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 finish();

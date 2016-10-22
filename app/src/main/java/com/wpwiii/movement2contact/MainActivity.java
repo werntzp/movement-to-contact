@@ -7,6 +7,9 @@ import android.widget.Button;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.content.Intent;
+import android.widget.TextView;
+import android.graphics.Typeface;
+import android.widget.ImageView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,8 +63,15 @@ public class MainActivity extends AppCompatActivity {
         _mediaPlayer.setLooping(true);
         _mediaPlayer.start();
 
+        // set custom font on label and buttons
+        Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
+        TextView text = (TextView) findViewById(R.id.textViewAppName);
+        text.setTypeface(tf);
+
+
         // disable the resume button if no saved game
-        Button resumeButton = (Button) findViewById(R.id.button2);
+        Button resumeButton = (Button) findViewById(R.id.buttonResume);
+        resumeButton.setTypeface(tf);
         resumeButton.setEnabled(false);
         resumeButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
@@ -72,7 +82,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // add onclick to new game button
-        Button newButton = (Button) findViewById(R.id.button1);
+        Button newButton = (Button) findViewById(R.id.buttonNew);
+        newButton.setTypeface(tf);
         newButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
@@ -81,13 +92,21 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // add onclick to help button
-        Button helpButton = (Button) findViewById(R.id.button4);
-        helpButton.setOnClickListener(new OnClickListener() {
+        // add onclick to help image
+        ImageView imageViewHelp = (ImageView) findViewById(R.id.imageViewHelp);
+        imageViewHelp.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, HelpActivity.class);
                 myIntent.putExtra("NEW_GAME", Boolean.FALSE);
                 startActivity(myIntent);
+            }
+        });
+
+        // add onclick to sound image
+        ImageView imageViewSound = (ImageView) findViewById(R.id.imageViewSound);
+        imageViewSound.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                // add a dialog here later
             }
         });
 
