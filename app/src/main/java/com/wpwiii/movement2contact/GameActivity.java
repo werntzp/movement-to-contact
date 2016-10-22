@@ -1,7 +1,6 @@
 package com.wpwiii.movement2contact;
 
 import android.graphics.Color;
-import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.app.Activity;
@@ -25,8 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import android.media.MediaPlayer;
-import android.media.AudioManager;
 import android.os.Handler;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 
 class Utils {
 
@@ -217,7 +217,7 @@ public class GameActivity extends AppCompatActivity {
     public static final int MAX_ROWS = 15;
     public static final int MAX_COLS = 10;
     public static final int MAX_ARRAY = 150;
-    private Integer[] _mapArray = new Integer[MAX_ARRAY];
+    Integer[] _mapArray = new Integer[MAX_ARRAY];
     TextView _turnText;
     TextView _actionText;
     String _actionString = "";
@@ -233,7 +233,7 @@ public class GameActivity extends AppCompatActivity {
     MediaPlayer _mpMG = null;
     MediaPlayer _mpMortar = null;
     MediaPlayer _mpSniper = null;
-
+    int _enemyUnitCount = 0;
 
     // ===========================
     // getArrayPosforRowCol
@@ -545,6 +545,7 @@ public class GameActivity extends AppCompatActivity {
                             unit.setAggression(aggression);
                             placeEnemyUnit(unit);
                         }
+                        break;
 
                     case Unit.TYPE_MG:
                         // loop through inf units, find a spot for each, create a new unit and add to arrays
@@ -553,6 +554,7 @@ public class GameActivity extends AppCompatActivity {
                             unit.setAggression(aggression);
                             placeEnemyUnit(unit);
                         }
+                        break;
 
                     case Unit.TYPE_SNIPER:
                         // loop through inf units, find a spot for each, create a new unit and add to arrays
@@ -561,6 +563,7 @@ public class GameActivity extends AppCompatActivity {
                             unit.setAggression(aggression);
                             placeEnemyUnit(unit);
                         }
+                        break;
                 }
 
             }
@@ -570,6 +573,9 @@ public class GameActivity extends AppCompatActivity {
             // do nothing
         }
 
+        // store number of enemy units
+        _enemyUnitCount = rifleSquads + mgTeams + sniperTeams;
+        Log.d(TAG, "There are " + _enemyUnitCount + " enemy units in this game.");
 
         Log.d(TAG, "Exit setUpEnemyUnits");
 
@@ -660,7 +666,7 @@ public class GameActivity extends AppCompatActivity {
         // look at map square array to see if a unit already there
         ms = _mapSquares[getArrayPosforRowCol(row, col)];
 
-        Log.d(TAG, "Exit isMapSpotTaken.");
+        Log.d(TAG, "Exit isMapSpotTaken");
         return (ms.getUnit() != null);
 
     }
@@ -1025,9 +1031,11 @@ public class GameActivity extends AppCompatActivity {
                 // we're out of loop, so if we should not be visible, swap them out for terrain
                 if (!stayVisible) {
                     v = (ImageView) _mapAdapter.getItem(ctr);
-                    img = fromSq.getTerrainType();
-                    v.setImageResource(img);
-                    _mapAdapter.setItem(v, img, pos);
+                    if (v != null) {
+                        img = fromSq.getTerrainType();
+                        v.setImageResource(img);
+                        _mapAdapter.setItem(v, img, pos);
+                    }
                 }
 
                 // update the array
@@ -1300,6 +1308,9 @@ public class GameActivity extends AppCompatActivity {
             _mapSquares[pos] = toSq;
             secs = 1;
             deselectUnit(unitPos);
+            // reduce number of enemy units by one
+            _enemyUnitCount--;
+            Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left.");
         }
         else {
             Utils.delay(secs, new Utils.DelayCallback() {
@@ -1322,8 +1333,24 @@ public class GameActivity extends AppCompatActivity {
 
         _actionText.setText(attackMsg);
 
-        Log.d(TAG, "Exit doAttack");
+        // are there any enemy units left?
+        if (_enemyUnitCount == 0) {
+            // throw up an alert dialg that they won
+            // 1. Instantiate an AlertDialog.Builder with its constructor
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("All enemy units destroyed. Sector cleared.");
+            builder.setTitle("Mission Accomplished");
+            builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    // back to main menu
+                    finish();
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
 
+        Log.d(TAG, "Exit doAttack");
 
     }
 
@@ -1467,6 +1494,96 @@ public class GameActivity extends AppCompatActivity {
     void resumeGame() {
 
     }
+
+    // ===========================
+    // doClick
+    // ===========================
+    void showDetails(int pos) {
+
+        ImageView v = (ImageView) _mapAdapter.getItem(pos);
+        MapSquare ms = _mapSquares[pos];
+        Unit u = ms.getUnit();
+        String title = null;
+        String message = null;
+        int icon = 0;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+
+        // let's see what we clicked on
+        // no unit in there, so show terrain details
+        if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            // there is a unit there, so first make sure it is a player's unit
+            if (u.getOwner() == Unit.OWNER_PLAYER) {
+                icon = getUnitIcon(u);
+                title = u.getName();
+                switch (u.getType()) {
+                    case Unit.TYPE_HQ:
+                        message = "The headquarters unit can remove suppression from any unit it is adjacent to at the end of the player's turn. Plus, any enemy unit within two squares always remains visible. " +
+                                "However, it can only attack adjacent units and doesn't pack much of a punch.";
+                        break;
+                    case Unit.TYPE_INF:
+                        message = "The infantry platoon consists of several squads and a mixture of semi-automatic rifles and machine guns like the M249. Infantry units can only attaack adjacent enemy units.";
+                        break;
+                    case Unit.TYPE_MG:
+                        message = "The machine gun section provides the company with additional firepower using the M240 machine gun. The machine gun section can attack enemy units two squares away.";
+                        break;
+                    case Unit.TYPE_MORTAR:
+                        message = "The mortar section provides an indirect attack capability up to five squares away. The mortar section can also conduct some \"recon by fire\" by attacking into terrain to identify " +
+                            "any potential enemy units hiding there.";
+                        break;
+                }
+            }
+        }
+        else if ((u != null) && (u.getOwner() == Unit.OWNER_OPFOR) && (u.getIsVisible())) {
+            icon = getUnitIcon(u);
+            title = u.getName();
+            switch (u.getType()) {
+                case Unit.TYPE_INF:
+                    message = "An enemy infantry squad. While not as powerful as your infantry platoons, they can easily disappear back into the terrain when you are not adjaent to them.";
+                    break;
+                case Unit.TYPE_MG:
+                    message = "An enemy machine gun team that can attack two squares away.";
+                    break;
+                case Unit.TYPE_SNIPER:
+                    message = "Enemy sniper teams can pin down your units from a greater distance and cause them to be suppressed easily.";
+                    break;
+
+            }
+        }
+        else {
+            icon = getTerrainImage(ms);
+            switch (icon) {
+                case R.drawable.rocky:
+                    title = "Rocky";
+                    message = "Rocky terrain is tough to move into, but provides great benefits when defending against an attack.";
+                    break;
+                case R.drawable.woods:
+                    title = "Woods";
+                    message = "Woods can help conceal enemy units and do provide some cover when defending.";
+                    break;
+                case R.drawable.scrub:
+                    title = "Scrub";
+                    message = "Scrub is easy to move through but does not provide any cover.";
+
+            }
+
+        }
+
+        builder.setMessage(message);
+        builder.setTitle(title);
+        builder.setIcon(icon);
+        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // do nothing, just close
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+
+
+    }
+
 
     // ===========================
     // doClick
@@ -1706,7 +1823,7 @@ public class GameActivity extends AppCompatActivity {
             public boolean onItemLongClick(AdapterView<?> parent, View v,
                                            int position, long id) {
                 Log.d(TAG, "LongClick at position: " + Integer.toString(position));
-                // TODO: Pop up dialog with terrain and/or unit details
+                showDetails(position);
                 return true;
             }
         });
