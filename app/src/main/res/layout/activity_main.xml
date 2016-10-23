@@ -22,7 +22,7 @@
         android:layout_marginLeft="0dp"
         android:layout_marginRight="0dp"
         android:layout_marginTop="0dp"
-        android:layout_marginBottom="10dp"
+        android:layout_marginBottom="15dp"
         android:padding="0dp"
         android:paddingBottom="0dp"
         android:paddingEnd="0dp"
@@ -68,7 +68,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingTop="10dp"
-        android:textSize="70sp"
+        android:textSize="60sp"
         android:textAlignment="center"
         android:textStyle="bold"
         android:textColor="#000000"
@@ -83,8 +83,8 @@
         app:srcCompat="@drawable/sound_transparent"
         android:id="@+id/imageViewSound"
         android:layout_alignParentStart="true"
-        android:layout_marginTop="625dp"
-        android:layout_marginStart="230dp"/>
+        android:layout_marginTop="618dp"
+        android:layout_marginStart="325dp"/>
 
     <ImageView
         android:layout_width="wrap_content"
@@ -92,7 +92,7 @@
         app:srcCompat="@drawable/help_transparent"
         android:id="@+id/imageViewHelp"
         android:layout_alignParentStart="true"
-        android:layout_marginTop="625dp"
-        android:layout_marginStart="150dp"/>
+        android:layout_marginTop="618dp"
+        android:layout_marginStart="370dp"/>
 
 </RelativeLayout>

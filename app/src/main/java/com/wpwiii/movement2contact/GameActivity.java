@@ -1,5 +1,6 @@
 package com.wpwiii.movement2contact;
 
+import com.wpwiii.movement2contact.Prefs;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
@@ -588,37 +589,42 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     // playSound
     // ===========================
-    int playSound(Unit u) {
+    void playSound(Unit u) {
 
         Log.d(TAG, "Enter getSound");
 
         int soundId = 0;
 
-        switch (u.getType()) {
-            case Unit.TYPE_HQ:
-                _mpInfSquad.start();
-                break;
-            case Unit.TYPE_MG:
-                _mpMG.start();
-                break;
-            case Unit.TYPE_MORTAR:
-                _mpMortar.start();
-                break;
-            case Unit.TYPE_SNIPER:
-                _mpSniper.start();
-                break;
-            default:
-                if (u.getSize() == Unit.SIZE_PLATOON) {
-                    _mpInfPlatoon.start();
-                }
-                else {
+        // only play sound if set in preferences dialog
+        if (Prefs.getValue(this, Prefs.KEY_SOUND) == 1) {
+
+            switch (u.getType()) {
+                case Unit.TYPE_HQ:
                     _mpInfSquad.start();
-                }
+                    break;
+                case Unit.TYPE_MG:
+                    _mpMG.start();
+                    break;
+                case Unit.TYPE_MORTAR:
+                    _mpMortar.start();
+                    break;
+                case Unit.TYPE_SNIPER:
+                    _mpSniper.start();
+                    break;
+                default:
+                    if (u.getSize() == Unit.SIZE_PLATOON) {
+                        _mpInfPlatoon.start();
+                    } else {
+                        _mpInfSquad.start();
+                    }
+            }
+
+        }
+        else {
+            Log.d(TAG, "No sound played due to preference setting");
         }
 
         Log.d(TAG, "Exit getSound");
-
-        return soundId;
 
     }
 
@@ -1326,7 +1332,7 @@ public class GameActivity extends AppCompatActivity {
         if (_enemyUnitCount == 0) {
             // throw up an alert dialg that they won
             // 1. Instantiate an AlertDialog.Builder with its constructor
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
             builder.setMessage("All enemy units destroyed. Sector cleared.");
             builder.setTitle("Mission Accomplished");
             builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
