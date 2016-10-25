@@ -76,11 +76,12 @@ public class MainActivity extends AppCompatActivity {
         Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
         TextView text = (TextView) findViewById(R.id.textViewAppName);
         text.setTypeface(tf);
+        Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
 
 
         // disable the resume button if no saved game
         Button resumeButton = (Button) findViewById(R.id.buttonResume);
-        resumeButton.setTypeface(tf);
+        resumeButton.setTypeface(tft);
         resumeButton.setEnabled(false);
         resumeButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
@@ -92,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
         // add onclick to new game button
         Button newButton = (Button) findViewById(R.id.buttonNew);
-        newButton.setTypeface(tf);
+        newButton.setTypeface(tft);
         newButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
