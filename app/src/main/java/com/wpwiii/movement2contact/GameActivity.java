@@ -874,8 +874,8 @@ public class GameActivity extends AppCompatActivity {
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
 
             redUnit = _mapSquares[ctr].getUnit();
-            // have to meet all these conditions ... is a unit there that is computer and not suppressed
-            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (!redUnit.getIsSuppressed()) && (redUnit.getEff() > Unit.EFF_BLACK)) {
+            // have to meet all these conditions ... is a unit there that is computer and not suppressed; also don't fire at a player unit if they are already combat infective
+            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (!redUnit.getIsSuppressed()) && (redUnit.getEff() > Unit.EFF_BLACK) && (blueUnit.getEff() > Unit.EFF_BLACK)) {
 
                 // found one, so get the row and column to see what is around it
                 fromSq = _mapSquares[ctr];
@@ -1674,7 +1674,7 @@ public class GameActivity extends AppCompatActivity {
                     return;
                 }
                 else {
-                    _actionText.setText(_activeUnit.getName() + " (" + _activeUnit.getRemainingMove() + " move left)");
+                    _actionText.setText(_activeUnit.getName() + " (already attacked this turn)");
                     return;
                 }
             }
