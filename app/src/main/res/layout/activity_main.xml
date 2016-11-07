@@ -36,7 +36,7 @@
         android:cropToPadding="false" />
 
     <Button
-        android:text="New"
+        android:text="@string/new_game"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/buttonNew"
@@ -51,7 +51,7 @@
         android:layout_marginBottom="360dp" />
 
     <Button
-        android:text="Resume"
+        android:text="@string/resume_game"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/buttonResume"

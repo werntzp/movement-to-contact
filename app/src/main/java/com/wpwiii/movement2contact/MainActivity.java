@@ -115,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         final ArrayList selectedItems = new ArrayList();
         selectedItems.add(Prefs.SETTINGS_MUSIC);
         selectedItems.add(Prefs.SETTINGS_SOUND);
-        final CharSequence[] choices = {"Music", "Sound Effects"};
+        final CharSequence[] choices = {getString(R.string.music), getString(R.string.soundfx)};
         final boolean[] defaults = {true, true};
 
         // read from prefs to decide whether to add true or false for music and sound
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
         imageViewSound.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.MyAlertDialogStyle);
-                builder.setTitle("Settings");
+                builder.setTitle(getString(R.string.dialog_settings));
                 builder.setMultiChoiceItems(choices, defaults,
                         new DialogInterface.OnMultiChoiceClickListener() {
                             @Override

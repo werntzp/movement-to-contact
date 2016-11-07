@@ -23,7 +23,7 @@
         android:layout_alignParentStart="true">
 
         <TextView
-            android:text="TextView"
+            android:text=""
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/textView2"
@@ -41,7 +41,7 @@
             android:layout_height="555dp" />
 
         <TextView
-            android:text="TextView"
+            android:text=""
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/textView8"
@@ -51,7 +51,7 @@
             android:layout_weight="0.26" />
 
         <Button
-            android:text="End Turn"
+            android:text="@string/button_end"
             android:background="#000000"
             android:textColor="#ffff00"
             android:textStyle="bold"

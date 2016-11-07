@@ -23,7 +23,7 @@
             android:id="@+id/webView1" />
 
         <Button
-            android:text="Back"
+            android:text="@string/button_back"
             android:layout_width="90dp"
             android:layout_height="37dp"
             android:background="#000000"

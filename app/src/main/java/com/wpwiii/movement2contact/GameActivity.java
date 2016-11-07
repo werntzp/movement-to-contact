@@ -508,7 +508,7 @@ public class GameActivity extends AppCompatActivity {
         // first, let's figure out how many units we need to base off the templates in the CSV
         // how many bad guys (between 5 and 10)
         rifleSquads = getRandomNumber(7, 5);
-        // then how many mg sections
+        // then how many mg  sections
         mgTeams = getRandomNumber(2, 0);
         // subtract out mg sections
         rifleSquads = rifleSquads - mgTeams;
@@ -592,8 +592,6 @@ public class GameActivity extends AppCompatActivity {
     void playSound(Unit u) {
 
         Log.d(TAG, "Enter getSound");
-
-        int soundId = 0;
 
         // only play sound if set in preferences dialog
         if (Prefs.getValue(this, Prefs.KEY_SOUND) == 1) {
@@ -708,6 +706,8 @@ public class GameActivity extends AppCompatActivity {
         String attackMsg = "";
         int pos = 0;
         int img = 0;
+        boolean isSuppressed = false;
+        boolean isHit = false;
         ImageView v = null;
         Unit redUnit = fromSq.getUnit();
         Unit blueUnit = toSq.getUnit();
@@ -764,14 +764,12 @@ public class GameActivity extends AppCompatActivity {
         // determine whether hit took place and then any damage
         if (roll <= attackNum) {
             // hit!
+            isHit = true;
             damage = getRandomNumber(10, 1);
             Log.d(TAG, "damage roll: " + Integer.toString(damage));
             if (damage <= 8) {
                 blueUnit.setEff(blueUnit.getEff() - 1);
                 Log.d(TAG, blueUnit.getName() + " effectiveness now " + blueUnit.getEff());
-                attackMsg = blueUnit.getName() + " was damaged ";
-            } else {
-                attackMsg = blueUnit.getName() + " was not damaged";
             }
 
             // certain types of unit cause supression
@@ -790,11 +788,12 @@ public class GameActivity extends AppCompatActivity {
                         else {
                             blueUnit.setIsSuppressed(true);
                             blueUnit.setTurnSuppressed(_turn);
-                            attackMsg += "and suppressed";
+                            isSuppressed = true;
                         }
                     }
 
             }
+
             // update array
             pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
             _mapSquares[pos].setUnit(blueUnit);
@@ -805,9 +804,21 @@ public class GameActivity extends AppCompatActivity {
             _mapAdapter.setItem(v, img, pos);
             _mapAdapter.notifyDataSetChanged();
 
-        } else {
-            attackMsg = blueUnit.getName() + " was not damaged";
+        }
 
+
+        // decide on which message to use
+        if ((isHit) && (damage <=8) && (isSuppressed)) {
+            // they were hit and suppressed
+            attackMsg = String.format(getString(R.string.attackmsg_sup), blueUnit.getName());
+        }
+        else if ((isHit) && (damage <=8) && (!isSuppressed)) {
+            // they were hit but not suppressed
+            attackMsg = String.format(getString(R.string.attackmsg_nosup), blueUnit.getName());
+        }
+        else {
+            // not even hit or hit but no damage, so same message
+            attackMsg = String.format(getString(R.string.attackmsg_miss), blueUnit.getName());
         }
 
         // update label
@@ -816,10 +827,7 @@ public class GameActivity extends AppCompatActivity {
         // make the attackimg unit visible and set their attacked flag
         redUnit.setHasAttacked(true);
         redUnit.setIsVisible(true);
-
-        // update the array
-        fromSq.setUnit(redUnit);
-        _mapSquares[redUnitPos] = fromSq;
+        _mapSquares[redUnitPos].setUnit(redUnit);
 
         // freeze the ui
         /*
@@ -875,7 +883,7 @@ public class GameActivity extends AppCompatActivity {
 
             redUnit = _mapSquares[ctr].getUnit();
             // have to meet all these conditions ... is a unit there that is computer and not suppressed; also don't fire at a player unit if they are already combat infective
-            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (!redUnit.getIsSuppressed()) && (redUnit.getEff() > Unit.EFF_BLACK) && (blueUnit.getEff() > Unit.EFF_BLACK)) {
+            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (!redUnit.getIsSuppressed()) && (redUnit.getEff() > Unit.EFF_BLACK)) {
 
                 // found one, so get the row and column to see what is around it
                 fromSq = _mapSquares[ctr];
@@ -913,7 +921,7 @@ public class GameActivity extends AppCompatActivity {
                         toSq = _mapSquares[pos];
                         blueUnit = toSq.getUnit();
 
-                        if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER)) {
+                        if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER) && (blueUnit.getEff() != Unit.EFF_BLACK)) {
                             // jump to attack code
                             doOpForAttack(fromSq, toSq);
                             // they don't want to move away from player unit, do set flag
@@ -932,7 +940,7 @@ public class GameActivity extends AppCompatActivity {
                         // now, find player units within range
                         toSq = _mapSquares[x];
                         blueUnit = toSq.getUnit();
-                        if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER) && (getDistanceBetweenSquares(fromSq.getRow(), fromSq.getCol(), toSq.getRow(), toSq.getCol()) < redUnit.getAttackRange())) {
+                        if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER) && (blueUnit.getEff() != Unit.EFF_BLACK) && (getDistanceBetweenSquares(fromSq.getRow(), fromSq.getCol(), toSq.getRow(), toSq.getCol()) < redUnit.getAttackRange())) {
                             // jump to attack code
                             doOpForAttack(fromSq, toSq);
                             justAttacked = true;
@@ -947,6 +955,7 @@ public class GameActivity extends AppCompatActivity {
                     // make the attackimg unit visible and set their attacked flag
                     redUnit.setHasAttacked(true);
                     redUnit.setIsVisible(true);
+                    _mapSquares[ctr].setUnit(redUnit);
                 }
 
                 // now, figure out movement -- if they just attacked, don't move
@@ -1037,8 +1046,7 @@ public class GameActivity extends AppCompatActivity {
                 }
 
                 // update the array
-                fromSq.setUnit(redUnit);
-                _mapSquares[ctr] = fromSq;
+                _mapSquares[ctr].setUnit(redUnit);
 
                 }
 
@@ -1124,7 +1132,7 @@ public class GameActivity extends AppCompatActivity {
 
         // increment turn counter
         _turn++;
-        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (You)";
+        _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _turnText.setText(_turnString);
 
         Log.d(TAG, "Exit doEndTurn");
@@ -1216,6 +1224,9 @@ public class GameActivity extends AppCompatActivity {
         String attackMsg = "";
         int secs = 2;
         int img = 0;
+        boolean isHit = false;
+        boolean isSuppressed = false;
+        boolean isNoLongerCombatEffective = false;
 
         // first, if enemy wasn't visible, it now is, so draw it
         pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
@@ -1264,16 +1275,14 @@ public class GameActivity extends AppCompatActivity {
         // determine whether hit took place and then any damage
         if (roll <= attackNum) {
             // hit!
+            isHit = true;
             damage = getRandomNumber(10, 1);
             Log.d(TAG, "damage roll: " + Integer.toString(damage));
             if (damage <= 8) {
                 redUnit.setEff(redUnit.getEff() - 1);
                 Log.d(TAG, "Enemy unit effectiveness now " + redUnit.getEff());
-                attackMsg = redUnit.getName() + " was damaged ";
             }
-            else {
-                attackMsg = redUnit.getName() + " was not damaged";
-            }
+
             // set the unit to visible since we hit it
             redUnit.setIsVisible(true);
             // certain types of unit cause supression
@@ -1282,15 +1291,10 @@ public class GameActivity extends AppCompatActivity {
                 case Unit.TYPE_MG:
                     redUnit.setIsSuppressed(true);
                     redUnit.setTurnSuppressed(_turn);
-                    attackMsg += " and suppressed";
+                    isSuppressed = true;
             }
             // update array
-            toSq.setUnit(redUnit);
-            _mapSquares[pos] = toSq;
-        }
-        else {
-            attackMsg = redUnit.getName() + " was not damaged";
-
+            _mapSquares[pos].setUnit(redUnit);
         }
 
         // if combat effectiveness now black, just get rid of it
@@ -1298,7 +1302,7 @@ public class GameActivity extends AppCompatActivity {
             img = toSq.getTerrainType();
             v.setImageResource(img);
             _mapAdapter.setItem(v, img, pos);
-            attackMsg = redUnit.getName() + " no longer combat effective";
+            isNoLongerCombatEffective = true;
             toSq.setUnit(null);
             _mapSquares[pos] = toSq;
             secs = 1;
@@ -1317,6 +1321,25 @@ public class GameActivity extends AppCompatActivity {
             });
         }
 
+        // decide on which message to use
+        if ((isHit) && (damage <=8) && (isSuppressed)) {
+            // they were hit and suppressed
+            attackMsg = String.format(getString(R.string.attackmsg_sup), redUnit.getName());
+        }
+        else if ((isHit) && (damage <=8) && (!isSuppressed)) {
+            // they were hit but not suppressed
+            attackMsg = String.format(getString(R.string.attackmsg_nosup), redUnit.getName());
+        }
+        else if (isNoLongerCombatEffective) {
+            // destroyed
+            attackMsg = String.format(getString(R.string.attackmsg_killed), redUnit.getName());
+        }
+        else {
+            // not even hit or hit but no damage, so same message
+            attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
+        }
+
+
         /*
         try {
             Thread.sleep(1000);
@@ -1333,8 +1356,8 @@ public class GameActivity extends AppCompatActivity {
             // throw up an alert dialg that they won
             // 1. Instantiate an AlertDialog.Builder with its constructor
             AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
-            builder.setMessage("All enemy units destroyed. Sector cleared.");
-            builder.setTitle("Mission Accomplished");
+            builder.setMessage(getString(R.string.map_cleared_body));
+            builder.setTitle(getString(R.string.map_cleared_title));
             builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int which) {
                     // back to main menu
@@ -1478,7 +1501,7 @@ public class GameActivity extends AppCompatActivity {
         setUpEnemyUnits();
 
         // set the initial turn text
-        _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (You)";
+        _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _actionString = "";
 
     }
@@ -1513,18 +1536,16 @@ public class GameActivity extends AppCompatActivity {
                 title = u.getName();
                 switch (u.getType()) {
                     case Unit.TYPE_HQ:
-                        message = "The headquarters unit can remove suppression from any unit it is adjacent to at the end of the player's turn. Plus, any enemy unit within two squares always remains visible. " +
-                                "However, it can only attack adjacent units and doesn't pack much of a punch.";
+                        message = getString(R.string.player_hq);
                         break;
                     case Unit.TYPE_INF:
-                        message = "The infantry platoon consists of several squads and a mixture of semi-automatic rifles and machine guns like the M249. Infantry units can only attaack adjacent enemy units.";
+                        message = getString(R.string.player_infantry);
                         break;
                     case Unit.TYPE_MG:
-                        message = "The machine gun section provides the company with additional firepower using the M240 machine gun. The machine gun section can attack enemy units two squares away.";
+                        message = getString(R.string.player_mg);
                         break;
                     case Unit.TYPE_MORTAR:
-                        message = "The mortar section provides an indirect attack capability up to five squares away. The mortar section can also conduct some \"recon by fire\" by attacking into terrain to identify " +
-                            "any potential enemy units hiding there.";
+                        message = getString(R.string.player_mortar);
                         break;
                 }
             }
@@ -1534,13 +1555,13 @@ public class GameActivity extends AppCompatActivity {
             title = u.getName();
             switch (u.getType()) {
                 case Unit.TYPE_INF:
-                    message = "An enemy infantry squad. While not as powerful as your infantry platoons, they can easily disappear back into the terrain when you are not adjaent to them.";
+                    message = getString(R.string.opfor_infantry);
                     break;
                 case Unit.TYPE_MG:
-                    message = "An enemy machine gun team that can attack two squares away.";
+                    message = getString(R.string.opfor_mg);
                     break;
                 case Unit.TYPE_SNIPER:
-                    message = "Enemy sniper teams can pin down your units from a greater distance and cause them to be suppressed easily.";
+                    message = getString(R.string.opfor_sniper);
                     break;
 
             }
@@ -1549,16 +1570,17 @@ public class GameActivity extends AppCompatActivity {
             icon = getTerrainImage(ms);
             switch (icon) {
                 case R.drawable.rocky:
-                    title = "Rocky";
-                    message = "Rocky terrain is tough to move into, but provides great benefits when defending against an attack.";
+                    title = getString(R.string.rocky);
+                    message = getString(R.string.rocky_desc);
                     break;
                 case R.drawable.woods:
-                    title = "Woods";
-                    message = "Woods can help conceal enemy units and do provide some cover when defending.";
+                    title = getString(R.string.woods);
+                    message = getString(R.string.woods_desc);
                     break;
                 case R.drawable.scrub:
-                    title = "Scrub";
-                    message = "Scrub is easy to move through but does not provide any cover.";
+                    title = getString(R.string.scrub);
+                    message = getString(R.string.scrub_desc);
+
 
             }
 
@@ -1612,13 +1634,13 @@ public class GameActivity extends AppCompatActivity {
             _activeSq = ms;
             selectUnit(position, Color.BLUE);
             if (_activeUnit.getEff() == Unit.EFF_BLACK) {
-                _actionText.setText(_activeUnit.getName() + " (Not combat effective)");
+                _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
                 _activeUnit = null;
                 _activeSq = null;
                 deselectUnit(position);
                 return;
             }
-            _actionText.setText(_activeUnit.getName() + " (" + _activeUnit.getRemainingMove() + " move left)");
+            _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
             return;
         }
 
@@ -1629,12 +1651,12 @@ public class GameActivity extends AppCompatActivity {
             if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
                 // make sure unit able to do anything
                 if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(_activeUnit.getName() + " (suppressed)");
+                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
                     return;
                 }
                 deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
                 selectUnit(position, Color.BLUE);
-                _actionText.setText(_activeUnit.getName() + " (" + _activeUnit.getRemainingMove() + " move left)");
+                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                 _activeUnit = u;
                 _activeSq = ms;
                 return;
@@ -1643,12 +1665,12 @@ public class GameActivity extends AppCompatActivity {
             if (ms.getUnit() == null) {
                 // make sure unit able to do anything
                 if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(_activeUnit.getName() + " (suppressed)");
+                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
                     return;
                 }
                 if (doMove(_activeSq, ms)) {
                     _activeUnit = ms.getUnit();
-                    _actionText.setText(_activeUnit.getName() + " (" + _activeUnit.getRemainingMove() + " move left)");
+                    _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                 }
 
                 return;
@@ -1657,30 +1679,27 @@ public class GameActivity extends AppCompatActivity {
             if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_OPFOR)) {
                 // make sure unit able to do anything
                 if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(_activeUnit.getName() + " (suppressed)");
+                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
                     return;
                 }
                 // make sure unit can attack (based on combat effectiveness)
                 if (_activeUnit.getEff() == Unit.EFF_BLACK) {
-                    _actionText.setText(_activeUnit.getName() + " (not combat effective");
+                    _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
                     return;
                 }
                 // if enemy not visible, we stumbled onto them so they get a first shot
-                if (ms.getUnit().getIsVisible() == false) {
+                if (!ms.getUnit().getIsVisible()) {
                     doOpForAttack(ms, _activeSq);
                 }
-                if (_activeUnit.getHasAttacked() == false) {
+                if (!_activeUnit.getHasAttacked()) {
                     doAttack(_activeSq, ms);
-                    return;
                 }
                 else {
-                    _actionText.setText(_activeUnit.getName() + " (already attacked this turn)");
-                    return;
+                    _actionText.setText(String.format(getString(R.string.already_attacked), _activeUnit.getName()));
                 }
             }
 
             // (d) otherwise, ignore
-            return;
 
         }
         else {
@@ -1691,7 +1710,7 @@ public class GameActivity extends AppCompatActivity {
                 selectUnit(position, Color.BLUE);
                 _activeUnit = u;
                 _activeSq = ms;
-                _actionText.setText(_activeUnit.getName() + " (" + _activeUnit.getRemainingMove() + " move left)");
+                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                 return;
             }
             // (b) if enemy there and in range, attack
@@ -1704,20 +1723,17 @@ public class GameActivity extends AppCompatActivity {
                 else {
                     if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
                         doAttack(_activeSq, ms);
-                        return;
                     }
                     else {
                         // ignore
-                        return;
                     }
                 }
             }
             else if (_activeSq != null)  {
-                _actionText.setText(_activeUnit.getName() + " (out of range)");
+                _actionText.setText(String.format(getString(R.string.out_of_range), _activeUnit.getName()));
             }
 
             // (c) otherwise, ignore
-            return;
 
         }
 
@@ -1763,7 +1779,7 @@ public class GameActivity extends AppCompatActivity {
         buttonEndTurn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // do the computer part of this turn
-                _turnString  = "Movement To Contact - Turn " + Integer.toString(_turn) + " (Computer)";
+                _turnString = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.computer));
                 _turnText.setText(_turnString);
                 _turnText.invalidate();
                 // after a 1 second delay, end the turn
