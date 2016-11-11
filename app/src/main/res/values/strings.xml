@@ -11,8 +11,6 @@
     <string name="turn">Movement To Contact - Turn %1$s (%2$s)</string>
     <string name="you">You</string>
     <string name="computer">Computer</string>
-    <string name="map_cleared_body">All enemy units destroyed. Sector cleared.</string>
-    <string name="map_cleared_title">Mission Accomplished</string>
     <string name="scrub_desc">Scrub is easy to move through but does not provide any cover.</string>
     <string name="woods_desc">Woods can help conceal enemy units and do provide some cover when defending.</string>
     <string name="rocky_desc">Rocky terrain is tough to move into, but provides great benefits when defending against an attack.</string>
@@ -36,5 +34,10 @@
     <string name="button_back">Back</string>
     <string name="button_end">End Turn</string>
     <string name="dialog_settings">Settings</string>
+    <string name="game_over_win_title">Mission Accomplished</string>
+    <string name="game_over_lose_title">Mission Failed</string>
+    <string name="game_over_lose_body">You have failed to clear the sector which will result in a failure of the larger battalion attack.</string>
+    <string name="game_over_win_body">You have successfully cleared this sector allowing the larger battalion attack to occur. Based on turns it took and status of your company, you have earned %1$d out of 3 stars.</string>
 
 </resources>
+

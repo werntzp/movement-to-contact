@@ -214,6 +214,9 @@ public class GameActivity extends AppCompatActivity {
     public static final int MAX_ROWS = 15;
     public static final int MAX_COLS = 10;
     public static final int MAX_ARRAY = 150;
+    public static final int MAX_TURNS = 20;
+    public static final int GAME_OVER_WIN = 1;
+    public static final int GAME_OVER_LOSE = 0;
     Integer[] _mapArray = new Integer[MAX_ARRAY];
     TextView _turnText;
     TextView _actionText;
@@ -233,467 +236,193 @@ public class GameActivity extends AppCompatActivity {
     int _enemyUnitCount = 0;
 
     // ===========================
-    // getArrayPosforRowCol
+    // calculateScore
     // ===========================
-    int getArrayPosforRowCol(int row, int col) {
-        int pos = 0;
-        for (pos = 0; pos < MAX_ARRAY; pos++) {
-            if ((_mapSquares[pos].getRow() == row) && (_mapSquares[pos].getCol() == col)) {
-                break;
-            }
-        }
-        return pos;
-    }
+    int calculateStars() {
 
+        int stars = 0;
+        int score = 0;
+        Unit blueUnit = null;
 
+        // subtract how many turns from 15
+        score = (15 - _turn);
+        // iterate through units and get a +1 for each unit still at green, -1 for any black units
+        for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
 
-    // ===========================
-    // getHQUnitMapSquare
-    // ===========================
-    MapSquare getHQUnitMapSquare() {
-
-        int pos = 0;
-        MapSquare ms = null;
-        Unit u = null;
-
-        for (pos = 0; pos < MAX_ARRAY; pos++) {
-            ms = _mapSquares[pos];
-            u = ms.getUnit();
-            if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (u.getType() == Unit.TYPE_HQ)) {
-                break;
-            }
-        }
-        return ms;
-    }
-
-    // ===========================
-    // getUnitIcon
-    // ===========================
-    int getUnitIcon(Unit u) {
-
-        int img = 0;
-
-        // first thing, if human player and unit is suppressed, grab that icon and just jump out
-        if ((u.getIsSuppressed()) && (u.getOwner() == Unit.OWNER_PLAYER)) {
-            switch (u.getType()) {
-                case Unit.TYPE_INF:
-                    img = R.drawable.inf_platoon_suppressed;
-                    break;
-                case Unit.TYPE_HQ:
-                    img = R.drawable.hq_section_suppressed;
-                    break;
-                case Unit.TYPE_MG:
-                    img = R.drawable.mg_team_suppressed;
-                    break;
-                case Unit.TYPE_MORTAR:
-                    img = R.drawable.mortar_section_suppressed;
-                    break;
-            }
-            return img;
-
-        }
-
-        // make decisions for icon based on size and type
-        if (u.getType() == Unit.TYPE_INF) {
-            if (u.getSize() == Unit.SIZE_SQUAD) {
-                img = R.drawable.inf_squad;
-            } else {
-                switch (u.getEff()) {
-                    case Unit.EFF_AMBER:
-                        img = R.drawable.inf_platoon_amber;
+            blueUnit = _mapSquares[ctr].getUnit();
+            // see if unit there and belongs to player
+            if ((blueUnit != null) && (blueUnit.getOwner() == Unit.OWNER_PLAYER)) {
+                switch (blueUnit.getEff()) {
+                    case Unit.EFF_GREEN:
+                        score += 1;
                         break;
                     case Unit.EFF_BLACK:
-                        img = R.drawable.inf_platoon_black;
-                        break;
-                    case Unit.EFF_RED:
-                        img = R.drawable.inf_platoon_red;
-                        break;
-                    default:
-                        img = R.drawable.inf_platoon_green;
+                        score -= 1;
                 }
             }
-        }
-        if ((u.getType() == Unit.TYPE_MG) && (u.getOwner() == Unit.OWNER_PLAYER)) {
-            switch (u.getEff()) {
-                case Unit.EFF_AMBER:
-                    img = R.drawable.mg_team_amber;
-                    break;
-                case Unit.EFF_BLACK:
-                    img = R.drawable.mg_team_black;
-                    break;
-                case Unit.EFF_RED:
-                    img = R.drawable.mg_team_red;
-                    break;
-                default:
-                    img = R.drawable.mg_team_green;
-            }
-        }
-        if (u.getType() == Unit.TYPE_MORTAR) {
-            switch (u.getEff()) {
-                case Unit.EFF_AMBER:
-                    img = R.drawable.mortar_section_amber;
-                    break;
-                case Unit.EFF_BLACK:
-                    img = R.drawable.mortar_section_black;
-                    break;
-                case Unit.EFF_RED:
-                    img = R.drawable.mortar_section_red;
-                    break;
-                default:
-                    img = R.drawable.mortar_section_green;
-            }
-        }
-        if (u.getType() == Unit.TYPE_HQ) {
-            switch (u.getEff()) {
-                case Unit.EFF_AMBER:
-                    img = R.drawable.hq_section_amber;
-                    break;
-                case Unit.EFF_BLACK:
-                    img = R.drawable.hq_section_black;
-                    break;
-                case Unit.EFF_RED:
-                    img = R.drawable.hq_section_red;
-                    break;
-                default:
-                    img = R.drawable.hq_section_green;
-            }
-        }
-        if (u.getType() == Unit.TYPE_SNIPER) {
-            img = R.drawable.sniper_team;
-        }
-        if ((u.getType() == Unit.TYPE_MG) && (u.getOwner() == Unit.OWNER_OPFOR)) {
-            img = R.drawable.mg_team;
+
         }
 
-        return img;
+        // now, take score to generate stars
+        if (score >= 10) {
+            stars = 3;
+        }
+        else if ((score < 10) && (score > 5)) {
+            stars = 2;
+        }
+        else {
+            stars = 1;
+        }
 
+        return stars;
     }
 
-    // ===========================
-    // setUpFriendlyUnits
-    // ===========================
-    void setUpFriendlyUnits() {
-
-        // open up csv in res/raw folder
-        InputStream ins = getResources().openRawResource(
-                getResources().getIdentifier("units",
-                        "raw", getPackageName()));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
-        StringBuilder out = new StringBuilder();
-        String line;
-        String item;
-        Unit unit;
-        Integer pos = 0;
-
-        try {
-            while ((line = reader.readLine()) != null) {
-                String [] items = line.split(",");
-                // create a unit class
-                unit = new Unit(items[0], Integer.parseInt(items[2]), Integer.parseInt(items[3]), Integer.parseInt(items[1]),
-                        Integer.parseInt(items[4]), Integer.parseInt(items[5]), Integer.parseInt(items[6]));
-                // drop that into the map array
-                pos = getArrayPosforRowCol(Integer.parseInt(items[7]), Integer.parseInt(items[8]));
-                _mapSquares[pos].setUnit(unit);
-                // also, overwrite the image for images array
-                _imageIds[pos] = getUnitIcon(unit);
-
-            }
-            reader.close();
-        }
-        catch (IOException ioe) {
-            // do nothing
-        }
-
-
-    }
-
-
-    // ===========================
-    // placeEnemyUnit
-    // ===========================
-    void placeEnemyUnit(Unit u) {
-
-        int col = 0;
-        int row = 0;
-        int pos = 0;
-
-        Log.d(TAG, "Enter placeEnemyUnit");
-
-        while (true) {
-            // generate random row and col
-            col = getRandomNumber(MAX_COLS, 1);
-            row = getRandomNumber(MAX_ROWS, 8);
-            if (!isMapSpotTaken(row, col)) {
-                // found an empty spot, so break out of loop
-                break;
-            }
-        }
-
-        // all enemy units start out not visible
-        u.setIsVisible(false);
-
-        // get the actual position
-        pos = getArrayPosforRowCol(row, col);
-        // add unit to array
-        _mapSquares[pos].setUnit(u);
-        // swap out icon if visible
-        if (u.getIsVisible()) {
-            _imageIds[pos] = getUnitIcon(u);
-        }
-
-        Log.d(TAG, "Exit placeEnemyUnit");
-
-    }
 
     // ==========================
-    // getDistanceBetweenSquares
+    // deselect unit in map square by changing border
     // ==========================
-    double getDistanceBetweenSquares(int x1, int y1, int x2, int y2) {
-
-        //Log.d(TAG, "Enter getDistanceBetweenSquares");
-
-        double dx = Math.abs(x2 - x1);
-        double dy = Math.abs(y2 - y1);
-        double min = Math.min(dx, dy);
-        double max = Math.max(dx, dy);
-        double straightSteps = max - min;
-
-        //Log.d(TAG, "Exit getDistanceBetweenSquares");
-
-        return Math.floor(Math.sqrt(2) * min + straightSteps);
-
+    void deselectUnit(int pos) {
+        ImageView v = (ImageView) _mapAdapter.getItem(pos);
+        v.setPadding(2,2,2,2);
+        v.setBackgroundColor(Color.BLACK);
     }
 
-
     // ===========================
-    // getRandomNumber
+    // doClick
     // ===========================
-    int getRandomNumber(int max, int min) {
+    void doClick(View v, int position) {
 
-        Random randomGenerator = new Random();
-        return randomGenerator.nextInt((max - min) + 1) + min;
+        Log.d(TAG, "Enter doClick");
 
-    }
+        MapSquare ms = null;
+        Unit u = null;
+        int owner = Unit.OWNER_PLAYER;
+        int icon = 0;
+        ImageView imgClicked =  (ImageView) v;
 
+        // figure out what they clicked on
+        ms = _mapSquares[position];
+        u = ms.getUnit();
 
-    // ===========================
-    // setUpEnemyUnits
-    // ===========================
-    void setUpEnemyUnits() {
+        // #1 if active square, quick check to see if we selected same one
+        if ((_activeSq != null) && (_activeSq == ms)) {
+            deselectUnit(position);
+            _actionText.setText("");
+            _activeSq = null;
+            _activeUnit = null;
+            return;
+        }
 
-        Log.d(TAG, "Enter setUpEnemyUnits");
+        // #2 if no active unit, the current one is now active (assuming player owns it)
+        if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            _activeUnit = u;
+            _activeSq = ms;
+            selectUnit(position, Color.BLUE);
+            if (_activeUnit.getEff() == Unit.EFF_BLACK) {
+                _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
+                _activeUnit = null;
+                _activeSq = null;
+                deselectUnit(position);
+                return;
+            }
+            _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+            return;
+        }
 
-        // open up csv in res/raw folder
-        InputStream ins = getResources().openRawResource(
-                getResources().getIdentifier("opfor",
-                        "raw", getPackageName()));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
-        StringBuilder out = new StringBuilder();
-        String line;
-        String item;
-        Unit unit;
-        int pos = 0;
-        int rifleSquads = 0;
-        int mgTeams = 0;
-        int sniperTeams = 0;
-        String name = "";
-        int owner = 0;
-        int type = 0;
-        int size = 0;
-        int range = 0;
-        int attack = 0;
-        int move = 0;
-        int aggression = Unit.AGG_NO;
-
-        // first, let's figure out how many units we need to base off the templates in the CSV
-        // how many bad guys (between 5 and 10)
-        rifleSquads = getRandomNumber(7, 5);
-        // then how many mg  sections
-        mgTeams = getRandomNumber(2, 0);
-        // subtract out mg sections
-        rifleSquads = rifleSquads - mgTeams;
-        // tack on a possible sniper team
-        sniperTeams = getRandomNumber(1, 0);
-
-        try {
-            while ((line = reader.readLine()) != null) {
-                String [] items = line.split(",");
-
-                // store all the fields so we can use later
-                name = items[0];
-                owner = Integer.parseInt(items[1]);
-                type = Integer.parseInt(items[2]);
-                size = Integer.parseInt(items[3]);
-                range = Integer.parseInt(items[4]);
-                attack = Integer.parseInt(items[5]);
-                move = Integer.parseInt(items[6]);
-
-                // for each enemy unit, pick an aggression factor (which we'll use later when it comes to movemebt)
-                aggression = getRandomNumber(3, 1);
-
-                // based on type, do another loop
-                switch (type) {
-                    case Unit.TYPE_INF:
-                        // loop through inf units, find a spot for each, create a new unit and add to arrays
-                        for (int ctr = 0; ctr < rifleSquads; ctr++) {
-                            unit = new Unit(name, type, size, owner, range, attack, move);
-                            unit.setAggression(aggression);
-                            placeEnemyUnit(unit);
-                        }
-                        break;
-
-                    case Unit.TYPE_MG:
-                        // loop through inf units, find a spot for each, create a new unit and add to arrays
-                        for (int ctr = 0; ctr < mgTeams; ctr++) {
-                            unit = new Unit(name, type, size, owner, range, attack, move);
-                            unit.setAggression(aggression);
-                            placeEnemyUnit(unit);
-                        }
-                        break;
-
-                    case Unit.TYPE_SNIPER:
-                        // loop through inf units, find a spot for each, create a new unit and add to arrays
-                        for (int ctr = 0; ctr < sniperTeams; ctr++) {
-                            unit = new Unit(name, type, size, owner, range, attack, move);
-                            unit.setAggression(aggression);
-                            placeEnemyUnit(unit);
-                        }
-                        break;
+        // #3 if we have active square and unit, did they select on adjacent map square?
+        if (isAdjacent(_activeSq, ms)) {
+            // yes, adjacent
+            // (a) if friendly there, switch to that unit
+            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
+                // make sure unit able to do anything
+                if (_activeUnit.getIsSuppressed()) {
+                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
+                    return;
+                }
+                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
+                selectUnit(position, Color.BLUE);
+                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                _activeUnit = u;
+                _activeSq = ms;
+                return;
+            }
+            // (b) if empty, move in (assuming move left)
+            if (ms.getUnit() == null) {
+                // make sure unit able to do anything
+                if (_activeUnit.getIsSuppressed()) {
+                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
+                    return;
+                }
+                if (doMove(_activeSq, ms)) {
+                    _activeUnit = ms.getUnit();
+                    _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                 }
 
+                return;
             }
-            reader.close();
-        }
-        catch (IOException ioe) {
-            // do nothing
-        }
-
-        // store number of enemy units
-        _enemyUnitCount = rifleSquads + mgTeams + sniperTeams;
-        Log.d(TAG, "There are " + _enemyUnitCount + " enemy units in this game.");
-
-        Log.d(TAG, "Exit setUpEnemyUnits");
-
-    }
-
-    // ===========================
-    // getTerrainImage
-    // ===========================
-    int getTerrainImage(MapSquare ms) {
-
-        return ms.getTerrainType();
-
-    }
-
-
-    // ===========================
-    // playSound
-    // ===========================
-    void playSound(Unit u) {
-
-        Log.d(TAG, "Enter getSound");
-
-        // only play sound if set in preferences dialog
-        if (Prefs.getValue(this, Prefs.KEY_SOUND) == 1) {
-
-            switch (u.getType()) {
-                case Unit.TYPE_HQ:
-                    _mpInfSquad.start();
-                    break;
-                case Unit.TYPE_MG:
-                    _mpMG.start();
-                    break;
-                case Unit.TYPE_MORTAR:
-                    _mpMortar.start();
-                    break;
-                case Unit.TYPE_SNIPER:
-                    _mpSniper.start();
-                    break;
-                default:
-                    if (u.getSize() == Unit.SIZE_PLATOON) {
-                        _mpInfPlatoon.start();
-                    } else {
-                        _mpInfSquad.start();
-                    }
+            // (c) if enemy there, attack
+            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_OPFOR)) {
+                // make sure unit able to do anything
+                if (_activeUnit.getIsSuppressed()) {
+                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
+                    return;
+                }
+                // make sure unit can attack (based on combat effectiveness)
+                if (_activeUnit.getEff() == Unit.EFF_BLACK) {
+                    _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
+                    return;
+                }
+                // if enemy not visible, we stumbled onto them so they get a first shot
+                if (!ms.getUnit().getIsVisible()) {
+                    doOpForAttack(ms, _activeSq);
+                }
+                if (!_activeUnit.getHasAttacked()) {
+                    doAttack(_activeSq, ms);
+                }
+                else {
+                    _actionText.setText(String.format(getString(R.string.already_attacked), _activeUnit.getName()));
+                }
             }
+
+            // (d) otherwise, ignore
 
         }
         else {
-            Log.d(TAG, "No sound played due to preference setting");
+            // not adjacent
+            // (a) if friendly, switch focus
+            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
+                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
+                selectUnit(position, Color.BLUE);
+                _activeUnit = u;
+                _activeSq = ms;
+                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                return;
+            }
+            // (b) if enemy there and in range, attack
+            if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+                // next, need to see if enemy unit visible; if not, only mortar can do recon by fire and attack
+                if (ms.getUnit().getIsVisible()) {
+                    doAttack(_activeSq, ms);
+                    return;
+                }
+                else {
+                    if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
+                        doAttack(_activeSq, ms);
+                    }
+                    else {
+                        // ignore
+                    }
+                }
+            }
+            else if (_activeSq != null)  {
+                _actionText.setText(String.format(getString(R.string.out_of_range), _activeUnit.getName()));
+            }
+
+            // (c) otherwise, ignore
+
         }
 
-        Log.d(TAG, "Exit getSound");
-
     }
-
-    // ===========================
-    // getMoveCost
-    // ===========================
-    int getMoveCost(MapSquare ms) {
-
-        Log.d(TAG, "Enter getMoveCost");
-
-        int moveCost = 0;
-
-        // see if unit has enough move
-        switch (ms.getTerrainType()) {
-            case R.drawable.scrub:
-                moveCost = 1;
-                break;
-            case R.drawable.woods:
-                moveCost = 2;
-                break;
-            case R.drawable.rocky:
-                moveCost = 3;
-        }
-
-        Log.d(TAG, "Exit getMoveCost. moveCost = " + Integer.toString(moveCost));
-        return moveCost;
-
-    }
-
-    // ===========================
-    // IsMapSpotTaken
-    // ===========================
-    boolean isMapSpotTaken(int row, int col) {
-
-        Log.d(TAG, "Enter isMapSpotTaken");
-
-        // look at map square array to see if a unit already there
-        MapSquare ms = _mapSquares[getArrayPosforRowCol(row, col)];
-
-        Log.d(TAG, "Exit isMapSpotTaken");
-        return (ms.getUnit() != null);
-
-    }
-
-
-    // ===========================
-    // isAbleToMove
-    // ===========================
-    boolean isAbleToMoveInto(MapSquare ms, Unit u) {
-
-        Log.d(TAG, "Enter isAbleToMoveInfo");
-
-        int moveRequired = 0;
-
-        // see if unit has enough move
-        switch (ms.getTerrainType()) {
-            case R.drawable.scrub:
-                moveRequired = 1;
-                break;
-            case R.drawable.woods:
-                moveRequired = 2;
-                break;
-            case R.drawable.rocky:
-                moveRequired = 3;
-        }
-
-        Log.d(TAG, "Exit isAbleToMoveInto. u.getRemainingMove() = " + Integer.toString(u.getRemainingMove())+ ", moveRequired = " + Integer.toString(moveRequired));
-        return (u.getRemainingMove() >= moveRequired);
-
-    }
-
 
     // ===========================
     // doOpForAttack
@@ -1048,7 +777,7 @@ public class GameActivity extends AppCompatActivity {
                 // update the array
                 _mapSquares[ctr].setUnit(redUnit);
 
-                }
+            }
 
         }
 
@@ -1067,6 +796,31 @@ public class GameActivity extends AppCompatActivity {
         int pos = 0;
         final Button endTurnButton = (Button) findViewById(R.id.button1);
         int img = 0;
+        boolean gameOver = false;
+
+        // time to quickly check if game should continue or they hit the two auto-end game business rules
+        // #1 are we past max turns?
+        if (_turn == MAX_TURNS) {
+            // yes, we're the max turn before incrementing so next turn would push us over ... game over man, game over
+            gameOver = true;
+        }
+        else {
+            // #2 loop through all player units and if all are at eff black, then done
+            gameOver = true;
+            for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
+                u = _mapSquares[ctr].getUnit();
+                if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (u.getEff() != Unit.EFF_BLACK)) {
+                    // we found a unit owned by the player not at eff black, so ok to continue
+                    gameOver = false;
+                    break;
+                }
+            }
+        }
+
+        if (gameOver == true) {
+            showEndGameDialog(GAME_OVER_LOSE);
+        }
+
 
         // clear out action text
         _actionText.setText("");
@@ -1353,19 +1107,7 @@ public class GameActivity extends AppCompatActivity {
 
         // are there any enemy units left?
         if (_enemyUnitCount == 0) {
-            // throw up an alert dialg that they won
-            // 1. Instantiate an AlertDialog.Builder with its constructor
-            AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
-            builder.setMessage(getString(R.string.map_cleared_body));
-            builder.setTitle(getString(R.string.map_cleared_title));
-            builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int which) {
-                    // back to main menu
-                    finish();
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();
+            showEndGameDialog(GAME_OVER_WIN);
         }
 
         Log.d(TAG, "Exit doAttack");
@@ -1374,33 +1116,255 @@ public class GameActivity extends AppCompatActivity {
 
 
     // ===========================
-    // randomizeTerrain
+    // getArrayPosforRowCol
     // ===========================
-    int randomizeTerrain() {
+    int getArrayPosforRowCol(int row, int col) {
+        int pos = 0;
+        for (pos = 0; pos < MAX_ARRAY; pos++) {
+            if ((_mapSquares[pos].getRow() == row) && (_mapSquares[pos].getCol() == col)) {
+                break;
+            }
+        }
+        return pos;
+    }
+
+    // ==========================
+    // getDistanceBetweenSquares
+    // ==========================
+    double getDistanceBetweenSquares(int x1, int y1, int x2, int y2) {
+
+        //Log.d(TAG, "Enter getDistanceBetweenSquares");
+
+        double dx = Math.abs(x2 - x1);
+        double dy = Math.abs(y2 - y1);
+        double min = Math.min(dx, dy);
+        double max = Math.max(dx, dy);
+        double straightSteps = max - min;
+
+        //Log.d(TAG, "Exit getDistanceBetweenSquares");
+
+        return Math.floor(Math.sqrt(2) * min + straightSteps);
+
+    }
+
+
+    // ===========================
+    // getHQUnitMapSquare
+    // ===========================
+    MapSquare getHQUnitMapSquare() {
+
+        int pos = 0;
+        MapSquare ms = null;
+        Unit u = null;
+
+        for (pos = 0; pos < MAX_ARRAY; pos++) {
+            ms = _mapSquares[pos];
+            u = ms.getUnit();
+            if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (u.getType() == Unit.TYPE_HQ)) {
+                break;
+            }
+        }
+        return ms;
+    }
+
+
+    // ===========================
+    // getMoveCost
+    // ===========================
+    int getMoveCost(MapSquare ms) {
+
+        Log.d(TAG, "Enter getMoveCost");
+
+        int moveCost = 0;
+
+        // see if unit has enough move
+        switch (ms.getTerrainType()) {
+            case R.drawable.scrub:
+                moveCost = 1;
+                break;
+            case R.drawable.woods:
+                moveCost = 2;
+                break;
+            case R.drawable.rocky:
+                moveCost = 3;
+        }
+
+        Log.d(TAG, "Exit getMoveCost. moveCost = " + Integer.toString(moveCost));
+        return moveCost;
+
+    }
+
+    // ===========================
+    // getRandomNumber
+    // ===========================
+    int getRandomNumber(int max, int min) {
 
         Random randomGenerator = new Random();
-        int terrainType = 0;
-        switch (randomGenerator.nextInt(10) + 1) {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-                terrainType = R.drawable.scrub;
-                break;
-            case 7:
-            case 8:
-            case 9:
-                terrainType = R.drawable.woods;
-                break;
-            default:
-                terrainType = R.drawable.rocky;
+        return randomGenerator.nextInt((max - min) + 1) + min;
+
+    }
+
+    // ===========================
+    // getTerrainImage
+    // ===========================
+    int getTerrainImage(MapSquare ms) {
+
+        return ms.getTerrainType();
+
+    }
+
+
+    // ===========================
+    // getUnitIcon
+    // ===========================
+    int getUnitIcon(Unit u) {
+
+        int img = 0;
+
+        // first thing, if human player and unit is suppressed, grab that icon and just jump out
+        if ((u.getIsSuppressed()) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            switch (u.getType()) {
+                case Unit.TYPE_INF:
+                    img = R.drawable.inf_platoon_suppressed;
+                    break;
+                case Unit.TYPE_HQ:
+                    img = R.drawable.hq_section_suppressed;
+                    break;
+                case Unit.TYPE_MG:
+                    img = R.drawable.mg_team_suppressed;
+                    break;
+                case Unit.TYPE_MORTAR:
+                    img = R.drawable.mortar_section_suppressed;
+                    break;
+            }
+            return img;
 
         }
 
-        return terrainType;
+        // make decisions for icon based on size and type
+        if (u.getType() == Unit.TYPE_INF) {
+            if (u.getSize() == Unit.SIZE_SQUAD) {
+                img = R.drawable.inf_squad;
+            } else {
+                switch (u.getEff()) {
+                    case Unit.EFF_AMBER:
+                        img = R.drawable.inf_platoon_amber;
+                        break;
+                    case Unit.EFF_BLACK:
+                        img = R.drawable.inf_platoon_black;
+                        break;
+                    case Unit.EFF_RED:
+                        img = R.drawable.inf_platoon_red;
+                        break;
+                    default:
+                        img = R.drawable.inf_platoon_green;
+                }
+            }
+        }
+        if ((u.getType() == Unit.TYPE_MG) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            switch (u.getEff()) {
+                case Unit.EFF_AMBER:
+                    img = R.drawable.mg_team_amber;
+                    break;
+                case Unit.EFF_BLACK:
+                    img = R.drawable.mg_team_black;
+                    break;
+                case Unit.EFF_RED:
+                    img = R.drawable.mg_team_red;
+                    break;
+                default:
+                    img = R.drawable.mg_team_green;
+            }
+        }
+        if (u.getType() == Unit.TYPE_MORTAR) {
+            switch (u.getEff()) {
+                case Unit.EFF_AMBER:
+                    img = R.drawable.mortar_section_amber;
+                    break;
+                case Unit.EFF_BLACK:
+                    img = R.drawable.mortar_section_black;
+                    break;
+                case Unit.EFF_RED:
+                    img = R.drawable.mortar_section_red;
+                    break;
+                default:
+                    img = R.drawable.mortar_section_green;
+            }
+        }
+        if (u.getType() == Unit.TYPE_HQ) {
+            switch (u.getEff()) {
+                case Unit.EFF_AMBER:
+                    img = R.drawable.hq_section_amber;
+                    break;
+                case Unit.EFF_BLACK:
+                    img = R.drawable.hq_section_black;
+                    break;
+                case Unit.EFF_RED:
+                    img = R.drawable.hq_section_red;
+                    break;
+                default:
+                    img = R.drawable.hq_section_green;
+            }
+        }
+        if (u.getType() == Unit.TYPE_SNIPER) {
+            img = R.drawable.sniper_team;
+        }
+        if ((u.getType() == Unit.TYPE_MG) && (u.getOwner() == Unit.OWNER_OPFOR)) {
+            img = R.drawable.mg_team;
+        }
+
+        return img;
+
     }
+
+
+
+
+    // ===========================
+    // IsMapSpotTaken
+    // ===========================
+    boolean isMapSpotTaken(int row, int col) {
+
+        Log.d(TAG, "Enter isMapSpotTaken");
+
+        // look at map square array to see if a unit already there
+        MapSquare ms = _mapSquares[getArrayPosforRowCol(row, col)];
+
+        Log.d(TAG, "Exit isMapSpotTaken");
+        return (ms.getUnit() != null);
+
+    }
+
+
+    // ===========================
+    // isAbleToMove
+    // ===========================
+    boolean isAbleToMoveInto(MapSquare ms, Unit u) {
+
+        Log.d(TAG, "Enter isAbleToMoveInfo");
+
+        int moveRequired = 0;
+
+        // see if unit has enough move
+        switch (ms.getTerrainType()) {
+            case R.drawable.scrub:
+                moveRequired = 1;
+                break;
+            case R.drawable.woods:
+                moveRequired = 2;
+                break;
+            case R.drawable.rocky:
+                moveRequired = 3;
+        }
+
+        Log.d(TAG, "Exit isAbleToMoveInto. u.getRemainingMove() = " + Integer.toString(u.getRemainingMove())+ ", moveRequired = " + Integer.toString(moveRequired));
+        return (u.getRemainingMove() >= moveRequired);
+
+    }
+
+
+
+
 
     // ==========================
     // is the toSq map spot adjaent to the fromSqu?
@@ -1443,27 +1407,8 @@ public class GameActivity extends AppCompatActivity {
 
     }
 
-    // ==========================
-    // select unit in map square by changing border
-    // ==========================
-    void selectUnit(int pos, int color) {
-        ImageView v = (ImageView) _mapAdapter.getItem(pos);
-        v.setPadding(5,5,5,5);
-        v.setBackgroundColor(color);
-    }
-
-    // ==========================
-    // deselect unit in map square by changing border
-    // ==========================
-    void deselectUnit(int pos) {
-        ImageView v = (ImageView) _mapAdapter.getItem(pos);
-        v.setPadding(2,2,2,2);
-        v.setBackgroundColor(Color.BLACK);
-    }
-
-
     // ===========================
-    // createNewGame
+    // newGame
     // ===========================
     void newGame() {
         // create array of map objects
@@ -1491,7 +1436,7 @@ public class GameActivity extends AppCompatActivity {
             ms.setTerrainType(terrainType);
             // also, set to image id array we'll pass in later
             _imageIds[ctr] = terrainType;
-             // now add to array
+            // now add to array
             _mapSquares[ctr] = ms;
 
         }
@@ -1503,239 +1448,6 @@ public class GameActivity extends AppCompatActivity {
         // set the initial turn text
         _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _actionString = "";
-
-    }
-
-    // ===========================
-    // resumeGame
-    // ===========================
-    void resumeGame() {
-
-    }
-
-    // ===========================
-    // doClick
-    // ===========================
-    void showDetails(int pos) {
-
-        ImageView v = (ImageView) _mapAdapter.getItem(pos);
-        MapSquare ms = _mapSquares[pos];
-        Unit u = ms.getUnit();
-        String title = null;
-        String message = null;
-        int icon = 0;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
-
-        // let's see what we clicked on
-        // no unit in there, so show terrain details
-        if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
-            // there is a unit there, so first make sure it is a player's unit
-            if (u.getOwner() == Unit.OWNER_PLAYER) {
-                icon = getUnitIcon(u);
-                title = u.getName();
-                switch (u.getType()) {
-                    case Unit.TYPE_HQ:
-                        message = getString(R.string.player_hq);
-                        break;
-                    case Unit.TYPE_INF:
-                        message = getString(R.string.player_infantry);
-                        break;
-                    case Unit.TYPE_MG:
-                        message = getString(R.string.player_mg);
-                        break;
-                    case Unit.TYPE_MORTAR:
-                        message = getString(R.string.player_mortar);
-                        break;
-                }
-            }
-        }
-        else if ((u != null) && (u.getOwner() == Unit.OWNER_OPFOR) && (u.getIsVisible())) {
-            icon = getUnitIcon(u);
-            title = u.getName();
-            switch (u.getType()) {
-                case Unit.TYPE_INF:
-                    message = getString(R.string.opfor_infantry);
-                    break;
-                case Unit.TYPE_MG:
-                    message = getString(R.string.opfor_mg);
-                    break;
-                case Unit.TYPE_SNIPER:
-                    message = getString(R.string.opfor_sniper);
-                    break;
-
-            }
-        }
-        else {
-            icon = getTerrainImage(ms);
-            switch (icon) {
-                case R.drawable.rocky:
-                    title = getString(R.string.rocky);
-                    message = getString(R.string.rocky_desc);
-                    break;
-                case R.drawable.woods:
-                    title = getString(R.string.woods);
-                    message = getString(R.string.woods_desc);
-                    break;
-                case R.drawable.scrub:
-                    title = getString(R.string.scrub);
-                    message = getString(R.string.scrub_desc);
-
-
-            }
-
-        }
-
-        builder.setMessage(message);
-        builder.setTitle(title);
-        builder.setIcon(icon);
-        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                // do nothing, just close
-            }
-        });
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-
-
-    }
-
-
-    // ===========================
-    // doClick
-    // ===========================
-    void doClick(View v, int position) {
-
-        Log.d(TAG, "Enter doClick");
-
-        MapSquare ms = null;
-        Unit u = null;
-        int owner = Unit.OWNER_PLAYER;
-        int icon = 0;
-        ImageView imgClicked =  (ImageView) v;
-
-        // figure out what they clicked on
-        ms = _mapSquares[position];
-        u = ms.getUnit();
-
-        // #1 if active square, quick check to see if we selected same one
-        if ((_activeSq != null) && (_activeSq == ms)) {
-            deselectUnit(position);
-            _actionText.setText("");
-            _activeSq = null;
-            _activeUnit = null;
-            return;
-        }
-
-        // #2 if no active unit, the current one is now active (assuming player owns it)
-        if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
-            _activeUnit = u;
-            _activeSq = ms;
-            selectUnit(position, Color.BLUE);
-            if (_activeUnit.getEff() == Unit.EFF_BLACK) {
-                _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
-                _activeUnit = null;
-                _activeSq = null;
-                deselectUnit(position);
-                return;
-            }
-            _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-            return;
-        }
-
-        // #3 if we have active square and unit, did they select on adjacent map square?
-        if (isAdjacent(_activeSq, ms)) {
-            // yes, adjacent
-            // (a) if friendly there, switch to that unit
-            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
-                // make sure unit able to do anything
-                if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
-                    return;
-                }
-                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
-                selectUnit(position, Color.BLUE);
-                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                _activeUnit = u;
-                _activeSq = ms;
-                return;
-            }
-            // (b) if empty, move in (assuming move left)
-            if (ms.getUnit() == null) {
-                // make sure unit able to do anything
-                if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
-                    return;
-                }
-                if (doMove(_activeSq, ms)) {
-                    _activeUnit = ms.getUnit();
-                    _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                }
-
-                return;
-            }
-            // (c) if enemy there, attack
-            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_OPFOR)) {
-                // make sure unit able to do anything
-                if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
-                    return;
-                }
-                // make sure unit can attack (based on combat effectiveness)
-                if (_activeUnit.getEff() == Unit.EFF_BLACK) {
-                    _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
-                    return;
-                }
-                // if enemy not visible, we stumbled onto them so they get a first shot
-                if (!ms.getUnit().getIsVisible()) {
-                    doOpForAttack(ms, _activeSq);
-                }
-                if (!_activeUnit.getHasAttacked()) {
-                    doAttack(_activeSq, ms);
-                }
-                else {
-                    _actionText.setText(String.format(getString(R.string.already_attacked), _activeUnit.getName()));
-                }
-            }
-
-            // (d) otherwise, ignore
-
-        }
-        else {
-            // not adjacent
-            // (a) if friendly, switch focus
-            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
-                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
-                selectUnit(position, Color.BLUE);
-                _activeUnit = u;
-                _activeSq = ms;
-                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                return;
-            }
-            // (b) if enemy there and in range, attack
-            if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
-                // next, need to see if enemy unit visible; if not, only mortar can do recon by fire and attack
-                if (ms.getUnit().getIsVisible()) {
-                    doAttack(_activeSq, ms);
-                    return;
-                }
-                else {
-                    if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
-                        doAttack(_activeSq, ms);
-                    }
-                    else {
-                        // ignore
-                    }
-                }
-            }
-            else if (_activeSq != null)  {
-                _actionText.setText(String.format(getString(R.string.out_of_range), _activeUnit.getName()));
-            }
-
-            // (c) otherwise, ignore
-
-        }
 
     }
 
@@ -1845,4 +1557,411 @@ public class GameActivity extends AppCompatActivity {
 
 
     }
+
+    // ===========================
+    // placeEnemyUnit
+    // ===========================
+    void placeEnemyUnit(Unit u) {
+
+        int col = 0;
+        int row = 0;
+        int pos = 0;
+
+        Log.d(TAG, "Enter placeEnemyUnit");
+
+        while (true) {
+            // generate random row and col
+            col = getRandomNumber(MAX_COLS, 1);
+            row = getRandomNumber(MAX_ROWS, 8);
+            if (!isMapSpotTaken(row, col)) {
+                // found an empty spot, so break out of loop
+                break;
+            }
+        }
+
+        // all enemy units start out not visible
+        u.setIsVisible(false);
+
+        // get the actual position
+        pos = getArrayPosforRowCol(row, col);
+        // add unit to array
+        _mapSquares[pos].setUnit(u);
+        // swap out icon if visible
+        if (u.getIsVisible()) {
+            _imageIds[pos] = getUnitIcon(u);
+        }
+
+        Log.d(TAG, "Exit placeEnemyUnit");
+
+    }
+
+    // ===========================
+    // playSound
+    // ===========================
+    void playSound(Unit u) {
+
+        Log.d(TAG, "Enter getSound");
+
+        // only play sound if set in preferences dialog
+        if (Prefs.getValue(this, Prefs.KEY_SOUND) == 1) {
+
+            switch (u.getType()) {
+                case Unit.TYPE_HQ:
+                    _mpInfSquad.start();
+                    break;
+                case Unit.TYPE_MG:
+                    _mpMG.start();
+                    break;
+                case Unit.TYPE_MORTAR:
+                    _mpMortar.start();
+                    break;
+                case Unit.TYPE_SNIPER:
+                    _mpSniper.start();
+                    break;
+                default:
+                    if (u.getSize() == Unit.SIZE_PLATOON) {
+                        _mpInfPlatoon.start();
+                    } else {
+                        _mpInfSquad.start();
+                    }
+            }
+
+        }
+        else {
+            Log.d(TAG, "No sound played due to preference setting");
+        }
+
+        Log.d(TAG, "Exit getSound");
+
+    }
+
+
+    // ===========================
+    // randomizeTerrain
+    // ===========================
+    int randomizeTerrain() {
+
+        Random randomGenerator = new Random();
+        int terrainType = 0;
+        switch (randomGenerator.nextInt(10) + 1) {
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                terrainType = R.drawable.scrub;
+                break;
+            case 7:
+            case 8:
+            case 9:
+                terrainType = R.drawable.woods;
+                break;
+            default:
+                terrainType = R.drawable.rocky;
+
+        }
+
+        return terrainType;
+    }
+
+
+    // ===========================
+    // resumeGame
+    // ===========================
+    void resumeGame() {
+
+    }
+
+    // ===========================
+    // setUpFriendlyUnits
+    // ===========================
+    void setUpFriendlyUnits() {
+
+        // open up csv in res/raw folder
+        InputStream ins = getResources().openRawResource(
+                getResources().getIdentifier("units",
+                        "raw", getPackageName()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
+        StringBuilder out = new StringBuilder();
+        String line;
+        String item;
+        Unit unit;
+        Integer pos = 0;
+
+        try {
+            while ((line = reader.readLine()) != null) {
+                String [] items = line.split(",");
+                // create a unit class
+                unit = new Unit(items[0], Integer.parseInt(items[2]), Integer.parseInt(items[3]), Integer.parseInt(items[1]),
+                        Integer.parseInt(items[4]), Integer.parseInt(items[5]), Integer.parseInt(items[6]));
+                // drop that into the map array
+                pos = getArrayPosforRowCol(Integer.parseInt(items[7]), Integer.parseInt(items[8]));
+                _mapSquares[pos].setUnit(unit);
+                // also, overwrite the image for images array
+                _imageIds[pos] = getUnitIcon(unit);
+
+            }
+            reader.close();
+        }
+        catch (IOException ioe) {
+            // do nothing
+        }
+
+
+    }
+
+
+
+
+
+
+
+
+
+    // ===========================
+    // setUpEnemyUnits
+    // ===========================
+    void setUpEnemyUnits() {
+
+        Log.d(TAG, "Enter setUpEnemyUnits");
+
+        // open up csv in res/raw folder
+        InputStream ins = getResources().openRawResource(
+                getResources().getIdentifier("opfor",
+                        "raw", getPackageName()));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
+        StringBuilder out = new StringBuilder();
+        String line;
+        String item;
+        Unit unit;
+        int pos = 0;
+        int rifleSquads = 0;
+        int mgTeams = 0;
+        int sniperTeams = 0;
+        String name = "";
+        int owner = 0;
+        int type = 0;
+        int size = 0;
+        int range = 0;
+        int attack = 0;
+        int move = 0;
+        int aggression = Unit.AGG_NO;
+
+        // first, let's figure out how many units we need to base off the templates in the CSV
+        // how many bad guys (between 5 and 10)
+        rifleSquads = getRandomNumber(7, 5);
+        // then how many mg  sections
+        mgTeams = getRandomNumber(2, 0);
+        // subtract out mg sections
+        rifleSquads = rifleSquads - mgTeams;
+        // tack on a possible sniper team
+        sniperTeams = getRandomNumber(1, 0);
+
+        try {
+            while ((line = reader.readLine()) != null) {
+                String [] items = line.split(",");
+
+                // store all the fields so we can use later
+                name = items[0];
+                owner = Integer.parseInt(items[1]);
+                type = Integer.parseInt(items[2]);
+                size = Integer.parseInt(items[3]);
+                range = Integer.parseInt(items[4]);
+                attack = Integer.parseInt(items[5]);
+                move = Integer.parseInt(items[6]);
+
+                // for each enemy unit, pick an aggression factor (which we'll use later when it comes to movemebt)
+                aggression = getRandomNumber(3, 1);
+
+                // based on type, do another loop
+                switch (type) {
+                    case Unit.TYPE_INF:
+                        // loop through inf units, find a spot for each, create a new unit and add to arrays
+                        for (int ctr = 0; ctr < rifleSquads; ctr++) {
+                            unit = new Unit(name, type, size, owner, range, attack, move);
+                            unit.setAggression(aggression);
+                            placeEnemyUnit(unit);
+                        }
+                        break;
+
+                    case Unit.TYPE_MG:
+                        // loop through inf units, find a spot for each, create a new unit and add to arrays
+                        for (int ctr = 0; ctr < mgTeams; ctr++) {
+                            unit = new Unit(name, type, size, owner, range, attack, move);
+                            unit.setAggression(aggression);
+                            placeEnemyUnit(unit);
+                        }
+                        break;
+
+                    case Unit.TYPE_SNIPER:
+                        // loop through inf units, find a spot for each, create a new unit and add to arrays
+                        for (int ctr = 0; ctr < sniperTeams; ctr++) {
+                            unit = new Unit(name, type, size, owner, range, attack, move);
+                            unit.setAggression(aggression);
+                            placeEnemyUnit(unit);
+                        }
+                        break;
+                }
+
+            }
+            reader.close();
+        }
+        catch (IOException ioe) {
+            // do nothing
+        }
+
+        // store number of enemy units
+        _enemyUnitCount = rifleSquads + mgTeams + sniperTeams;
+        Log.d(TAG, "There are " + _enemyUnitCount + " enemy units in this game.");
+
+        Log.d(TAG, "Exit setUpEnemyUnits");
+
+    }
+
+
+
+
+
+
+
+    // ==========================
+    // select unit in map square by changing border
+    // ==========================
+    void selectUnit(int pos, int color) {
+        ImageView v = (ImageView) _mapAdapter.getItem(pos);
+        v.setPadding(5,5,5,5);
+        v.setBackgroundColor(color);
+    }
+
+
+
+
+
+
+
+
+    // ===========================
+    // showDetails
+    // ===========================
+    void showDetails(int pos) {
+
+        ImageView v = (ImageView) _mapAdapter.getItem(pos);
+        MapSquare ms = _mapSquares[pos];
+        Unit u = ms.getUnit();
+        String title = null;
+        String message = null;
+        int icon = 0;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+
+        // let's see what we clicked on
+        // no unit in there, so show terrain details
+        if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            // there is a unit there, so first make sure it is a player's unit
+            if (u.getOwner() == Unit.OWNER_PLAYER) {
+                icon = getUnitIcon(u);
+                title = u.getName();
+                switch (u.getType()) {
+                    case Unit.TYPE_HQ:
+                        message = getString(R.string.player_hq);
+                        break;
+                    case Unit.TYPE_INF:
+                        message = getString(R.string.player_infantry);
+                        break;
+                    case Unit.TYPE_MG:
+                        message = getString(R.string.player_mg);
+                        break;
+                    case Unit.TYPE_MORTAR:
+                        message = getString(R.string.player_mortar);
+                        break;
+                }
+            }
+        }
+        else if ((u != null) && (u.getOwner() == Unit.OWNER_OPFOR) && (u.getIsVisible())) {
+            icon = getUnitIcon(u);
+            title = u.getName();
+            switch (u.getType()) {
+                case Unit.TYPE_INF:
+                    message = getString(R.string.opfor_infantry);
+                    break;
+                case Unit.TYPE_MG:
+                    message = getString(R.string.opfor_mg);
+                    break;
+                case Unit.TYPE_SNIPER:
+                    message = getString(R.string.opfor_sniper);
+                    break;
+
+            }
+        }
+        else {
+            icon = getTerrainImage(ms);
+            switch (icon) {
+                case R.drawable.rocky:
+                    title = getString(R.string.rocky);
+                    message = getString(R.string.rocky_desc);
+                    break;
+                case R.drawable.woods:
+                    title = getString(R.string.woods);
+                    message = getString(R.string.woods_desc);
+                    break;
+                case R.drawable.scrub:
+                    title = getString(R.string.scrub);
+                    message = getString(R.string.scrub_desc);
+
+
+            }
+
+        }
+
+        builder.setMessage(message);
+        builder.setTitle(title);
+        builder.setIcon(icon);
+        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // do nothing, just close
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+
+
+    }
+
+    // ===========================
+    // showEndGameDialog
+    // ===========================
+    public void showEndGameDialog(int message) {
+
+        int title = 0;
+        String body = null;
+
+        // decide which title to use
+        if (message == GAME_OVER_LOSE) {
+            title = R.string.game_over_lose_title;
+            body = getString(R.string.game_over_lose_body);
+        }
+        else {
+            title = R.string.game_over_win_title;
+            // they won the game, so also figure out the score
+            body = String.format(getString(R.string.game_over_win_body), calculateStars());
+        }
+
+        // instantiate an AlertDialog.Builder with its constructor
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+        builder.setMessage(body);
+        builder.setTitle(getString(title));
+        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // back to main menu
+                finish();
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+    }
+
+
 }
