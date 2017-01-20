@@ -571,6 +571,107 @@ public class GameActivity extends AppCompatActivity {
     }
 
     // ===========================
+    // doOpForMove
+    // ===========================
+    void doOpForMove(MapSquare fromSq, int fromPos) {
+
+        MapSquare ms = fromSq;
+        MapSquare toSquare = null;
+        int pos = 0;
+        Unit u = fromSq.getUnit();
+        int row = ms.getRow();
+        int col = ms.getCol();
+        int toRow = 0;
+        int toCol = 0;
+        boolean isAbleToMove = false;
+        int tries = 0;
+        ImageView v = null;
+        int img = 0;
+
+        // outer loop
+        while ((!isAbleToMove) && (tries <= 3)) {
+
+            // start with where we are at
+            toRow = row;
+            toCol = col;
+
+            // based on aggression factor, enemy units move towards top of map, side to side or retreat backwards
+            switch (u.getAggression()) {
+                case 3:
+                    // subtract 1 from current row
+                    toRow--;
+                    // get random number, subtract -1 and then add that to column
+                    toCol = toCol + (getRandomNumber(2, 0) - 1);
+                    break;
+                case 2:
+                    // column can go left or right, so pick 0 or 1
+                    toCol = getRandomNumber(1, 0);
+                    if (toCol == 0) {
+                        toCol = col - 1;
+                    } else {
+                        toCol = col + 1;
+                    }
+                    break;
+                case 1:
+                    // subtract 1 from current row
+                    toRow++;
+                    // get random number, subtract -1 and then add that to column
+                    toCol = toCol + (getRandomNumber(2, 0) - 1);
+            }
+
+            // make sure toRow and toCol aren't outside map boundaries
+            if (toRow > MAX_ROWS) {
+                toRow = MAX_ROWS;
+            }
+            if (toRow < 0) {
+                toRow = 0;
+            }
+            if (toCol > MAX_COLS) {
+                toCol = MAX_COLS;
+            }
+            if (toCol < 0) {
+                toCol = 0;
+            }
+
+            // find that map square
+            pos = getArrayPosforRowCol(toRow, toCol);
+            // before we move there, anything in there?
+            toSquare = _mapSquares[pos];
+            if (toSquare.getUnit() == null) {
+                // make the unit visible for now
+                u.setIsVisible(true);
+                // able to move into that spot; move the unit into that spot
+                _mapSquares[pos].setUnit(u);
+                _mapSquares[fromPos].setUnit(null);
+                // redraw the two icons
+                v = (ImageView) _mapAdapter.getItem(fromPos);
+                if (v != null) {
+                    img = fromSq.getTerrainType();
+                    v.setImageResource(img);
+                    _mapAdapter.setItem(v, img, fromPos);
+                }
+                v = (ImageView) _mapAdapter.getItem(pos);
+                if (v != null) {
+                    img = getUnitIcon(u);
+                    v.setImageResource(img);
+                    _mapAdapter.setItem(v, img, pos);
+                }
+                // set flag so we pop out of loop
+                isAbleToMove = true;
+            }
+            else {
+                // nope, something there so just increment the tries
+                tries++;
+            }
+
+
+        }
+
+
+
+    }
+
+    // ===========================
     // doOpForTurn
     // ===========================
     void doOpForTurn() {
@@ -684,16 +785,13 @@ public class GameActivity extends AppCompatActivity {
                     // make the attackimg unit visible and set their attacked flag
                     redUnit.setHasAttacked(true);
                     redUnit.setIsVisible(true);
+                    Log.d(TAG, "redUnit " + redUnit.getName() + " set to visible after attacking");
                     _mapSquares[ctr].setUnit(redUnit);
                 }
 
                 // now, figure out movement -- if they just attacked, don't move
                 if (!justAttacked) {
-                    // units with aggfac of 3, move towards nearest player unit, aggfac 2 have 50/50 shot and aggfac of 1 have 50/50 shot to stay in place or move away
-
-                    // after moving, see if they are next to or within range of player to attack
-
-
+                    doOpForMove(_mapSquares[ctr], ctr);
                 }
 
             }
@@ -706,18 +804,18 @@ public class GameActivity extends AppCompatActivity {
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
 
             redUnit = _mapSquares[ctr].getUnit();
-            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR)) {
+            if ((redUnit != null) && (redUnit.getOwner() == Unit.OWNER_OPFOR) && (!redUnit.getHasAttacked())) {
                 // see if adjacent to any friendly forces
                 fromSq = _mapSquares[ctr];
                 row = fromSq.getRow();
                 col = fromSq.getCol();
                 stayVisible = false;
 
-                Log.d(TAG, "Checking for redUnit at " + Integer.toString(row) + ", " + Integer.toString(col));
+                Log.d(TAG, "Checking for redUnit " + redUnit.getName() + " at " + Integer.toString(row) + ", " + Integer.toString(col));
 
                 // first, randomly figure out if they should stay visible (2 in 10 chance)
                 result = getRandomNumber(10, 1);
-                Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
+                //Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
                 if (result <= 2) {
                     stayVisible = true;
                 }
@@ -733,46 +831,45 @@ public class GameActivity extends AppCompatActivity {
                         distanceAllowed = 1.0;
                         if (blueUnit.getType() == Unit.TYPE_HQ) {
                             distanceAllowed = 2.0;
-                            Log.d(TAG, "blueUnit is HQ, so distance can be up to 2");
+                            //Log.d(TAG, "blueUnit is HQ, so distance can be up to 2");
                         }
 
                         // see how far from enemy unit
                         distanceActual = getDistanceBetweenSquares(row, col, toSq.getRow(), toSq.getCol());
-                        Log.d(TAG, "distanceActual is " + Double.toString(distanceActual) + ", distanceAllowed is " + Double.toString(distanceAllowed));
+                        //Log.d(TAG, "distanceActual is " + Double.toString(distanceActual) + ", distanceAllowed is " + Double.toString(distanceAllowed));
                         if ((distanceActual <= distanceAllowed)) {
                             // yes, enemy should remain visible, so do nothing
-                            Log.d(TAG, "redUnit at " + Integer.toString(row) + ", " + Integer.toString(col) + " should remain visible");
+                            Log.d(TAG, "redUnit " + redUnit.getName() + " at " + Integer.toString(row) + ", " + Integer.toString(col) + " should remain visible");
                             stayVisible = true;
                             redUnit.setIsVisible(true);
                             break;
                         }
                         else {
+                            stayVisible = false;
                             redUnit.setIsVisible(false);
                         }
+
 
                     }
 
                 }
 
-                // put a delay in here on the ui so they can see the unit
-                /*
-                try {
-                    Thread.sleep(3000);
-                }
-                catch (Exception e) {
-                    // do nothing
-                }
-                */
-
                 // we're out of loop, so if we should not be visible, swap them out for terrain
                 if (!stayVisible) {
+                    Log.d(TAG, "redUnit " + redUnit.getName() + " at " + Integer.toString(row) + ", " + Integer.toString(col) + " is not visible, so swapping back in terrain icon");
                     v = (ImageView) _mapAdapter.getItem(ctr);
                     if (v != null) {
                         img = fromSq.getTerrainType();
                         v.setImageResource(img);
-                        _mapAdapter.setItem(v, img, pos);
+                        _mapAdapter.setItem(v, img, ctr);
+                    }
+                    else {
+                        Log.d(TAG, "ImageView was null ... redUnit " + redUnit.getName() + " at " + Integer.toString(row) + ", " + Integer.toString(col));
                     }
                 }
+
+
+                _mapAdapter.notifyDataSetChanged();
 
                 // update the array
                 _mapSquares[ctr].setUnit(redUnit);
@@ -1124,6 +1221,10 @@ public class GameActivity extends AppCompatActivity {
             if ((_mapSquares[pos].getRow() == row) && (_mapSquares[pos].getCol() == col)) {
                 break;
             }
+        }
+        // do not return 150 because that means array out of bounds
+        if (pos == MAX_ARRAY) {
+            pos = MAX_ARRAY - 1;
         }
         return pos;
     }
@@ -1771,7 +1872,7 @@ public class GameActivity extends AppCompatActivity {
                 attack = Integer.parseInt(items[5]);
                 move = Integer.parseInt(items[6]);
 
-                // for each enemy unit, pick an aggression factor (which we'll use later when it comes to movemebt)
+                // for each enemy unit, pick an aggression factor (which we'll use later when it comes to movement)
                 aggression = getRandomNumber(3, 1);
 
                 // based on type, do another loop
@@ -1819,12 +1920,6 @@ public class GameActivity extends AppCompatActivity {
 
     }
 
-
-
-
-
-
-
     // ==========================
     // select unit in map square by changing border
     // ==========================
@@ -1833,13 +1928,6 @@ public class GameActivity extends AppCompatActivity {
         v.setPadding(5,5,5,5);
         v.setBackgroundColor(color);
     }
-
-
-
-
-
-
-
 
     // ===========================
     // showDetails
