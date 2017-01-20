@@ -30,7 +30,7 @@
     <string name="player_mg">The machine gun section provides the company with additional firepower and can attack enemy units two squares away.</string>
     <string name="player_mortar">The mortar section provides an indirect attack capability up to five squares away. The mortar section can also conduct \"recon by fire\" by attacking into terrain to identify any potential enemy units hiding there.</string>
     <string name="new_game">New</string>
-    <string name="resume_game">Resume</string>
+    <string name="resume_game">Load</string>
     <string name="button_back">Back</string>
     <string name="button_end">End Turn</string>
     <string name="dialog_settings">Settings</string>

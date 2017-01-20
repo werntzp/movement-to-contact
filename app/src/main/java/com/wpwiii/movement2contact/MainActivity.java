@@ -3,6 +3,7 @@ package com.wpwiii.movement2contact;
 import com.wpwiii.movement2contact.Prefs;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,9 +15,14 @@ import android.widget.TextView;
 import android.graphics.Typeface;
 import android.widget.ImageView;
 import java.util.ArrayList;
-
+import android.util.Log;
+import java.io.FileOutputStream;
+import android.content.Context;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
+    private static final String SAVEGAMEFILENAME = "savegame.dat";
 
     MediaPlayer _mediaPlayer = null;
 
@@ -41,12 +47,44 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         startMediaPlayer();
+        boolean enableResume = false;
+
+        try {
+            String[] files = fileList();
+            enableResume = false;
+            for (String file : files) {
+                if (file.equals(SAVEGAMEFILENAME)) {
+                    enableResume = true;
+                    break;
+                }
+            }
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+            enableResume = false;
+        }
+
+        Button resumeButton = (Button) findViewById(R.id.buttonResume);
+        resumeButton.setEnabled(enableResume);
+        if (enableResume) {
+            resumeButton.setTextColor(Color.parseColor("#ffff00"));
+            resumeButton.setBackgroundColor(Color.parseColor("#000000"));
+        }
+        else {
+            resumeButton.setTextColor(Color.parseColor("#c0c0c0"));
+            resumeButton.setBackgroundColor(Color.parseColor("#545858"));
+        }
+
+        Log.d(TAG, "onResume");
+
     }
 
     @Override
     protected void onRestart() {
         super.onRestart();
         startMediaPlayer();
+
+        Log.d(TAG, "onRestart");
 
     }
 
@@ -61,6 +99,8 @@ public class MainActivity extends AppCompatActivity {
         catch (Exception e) {
             // do nothing
         }
+
+        Log.d(TAG, "onPause");
     }
 
     @Override
@@ -69,8 +109,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         _mediaPlayer = MediaPlayer.create(this, R.raw.holst);
+        _mediaPlayer.setVolume(1.0f, 1.0f);
         _mediaPlayer.setLooping(true);
         startMediaPlayer();
+        boolean enableResume = false;
 
         // set custom font on label and buttons
         Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
@@ -82,11 +124,33 @@ public class MainActivity extends AppCompatActivity {
         // disable the resume button if no saved game
         Button resumeButton = (Button) findViewById(R.id.buttonResume);
         resumeButton.setTypeface(tft);
-        resumeButton.setEnabled(false);
+        // if there is a saved game file, enable the resume button, otherwise disable it
+        try {
+            String[] files = fileList();
+            enableResume = false;
+            for (String file : files) {
+                if (file.equals(SAVEGAMEFILENAME)) {
+                    enableResume = true;
+                    break;
+                }
+            }
+        }
+        catch (Exception e) {
+            enableResume = false;
+        }
+        resumeButton.setEnabled(enableResume);
+        if (enableResume) {
+            resumeButton.setTextColor(Color.parseColor("#ffff00"));
+            resumeButton.setBackgroundColor(Color.parseColor("#000000"));
+        }
+        else {
+            resumeButton.setTextColor(Color.parseColor("#c0c0c0"));
+            resumeButton.setBackgroundColor(Color.parseColor("#545858"));
+        }
         resumeButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
-                myIntent.putExtra("NEW_GAME", false);
+                myIntent.putExtra("NEW_GAME", Boolean.FALSE);
                 startActivity(myIntent);
             }
         });
@@ -96,6 +160,13 @@ public class MainActivity extends AppCompatActivity {
         newButton.setTypeface(tft);
         newButton.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
+                // starting a new game, so delete any saved game if it exists
+                try {
+                    deleteFile(SAVEGAMEFILENAME);
+                }
+                catch (Exception e) {
+                    // do nothing
+                }
                 Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
                 myIntent.putExtra("NEW_GAME", Boolean.TRUE);
                 startActivity(myIntent);

@@ -24,6 +24,8 @@ import android.media.MediaPlayer;
 import android.os.Handler;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import java.io.FileOutputStream;
+import android.content.Context;
 
 class Utils {
 
@@ -211,6 +213,7 @@ public class GameActivity extends AppCompatActivity {
     GridView _gridView;
     MapAdapter _mapAdapter = new MapAdapter(this);
     private static final String TAG = "GameActivity";
+    private static final String SAVEGAMEFILENAME = "savegame.dat";
     public static final int MAX_ROWS = 15;
     public static final int MAX_COLS = 10;
     public static final int MAX_ARRAY = 150;
@@ -986,6 +989,11 @@ public class GameActivity extends AppCompatActivity {
         _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _turnText.setText(_turnString);
 
+
+        // save all the game data
+
+
+
         Log.d(TAG, "Exit doEndTurn");
 
 
@@ -1558,9 +1566,8 @@ public class GameActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
 
-        Log.d(TAG, "Enter onBackPressed");
-        // TODO: persist the game to CSV
-        Log.d(TAG, "Exit onBackPressed");
+        Log.d(TAG, "onBackPressed");
+        persistGame();
         finish();
 
     }
@@ -1658,6 +1665,54 @@ public class GameActivity extends AppCompatActivity {
 
 
     }
+
+
+    // ===========================
+    // onPause
+    // ===========================
+    @Override
+    public void onPause() {
+
+
+        super.onPause();
+        Log.d(TAG, "onPause");
+        persistGame();
+
+    }
+
+    // ===========================
+    // onResume
+    // ===========================
+    @Override
+    public void onResume() {
+
+
+        super.onResume();
+        Log.d(TAG, "onResume");
+
+    }
+
+    // ===========================
+    // persistGame
+    // ===========================
+    public void persistGame() {
+
+
+        Log.d(TAG, "persistGame");
+
+
+        try {
+            FileOutputStream fos = openFileOutput(SAVEGAMEFILENAME, Context.MODE_PRIVATE);
+            fos.write("Hi".getBytes());
+            fos.close();
+        }
+        catch (Exception e) {
+            // raise an error
+            Log.e(TAG, e.getMessage());
+        }
+
+    }
+
 
     // ===========================
     // placeEnemyUnit
