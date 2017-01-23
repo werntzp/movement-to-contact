@@ -227,16 +227,17 @@ public class GameActivity extends AppCompatActivity {
     String _turnString = "";
     Intent _myIntent = getIntent();
     MapSquare[] _mapSquares;
-    private Integer[] _imageIds = new Integer[MAX_ARRAY];
-    private Unit _activeUnit = null;
-    private MapSquare _activeSq = null;
-    private int _turn = 1;
+    Integer[] _imageIds = new Integer[MAX_ARRAY];
+    Unit _activeUnit = null;
+    MapSquare _activeSq = null;
+    int _turn = 1;
     MediaPlayer _mpInfPlatoon = null;
     MediaPlayer _mpInfSquad = null;
     MediaPlayer _mpMG = null;
     MediaPlayer _mpMortar = null;
     MediaPlayer _mpSniper = null;
     int _enemyUnitCount = 0;
+    boolean _persistGame = true;
 
     // ===========================
     // calculateScore
@@ -1676,8 +1677,9 @@ public class GameActivity extends AppCompatActivity {
 
         super.onPause();
         Log.d(TAG, "onPause");
-        persistGame();
-
+        if (_persistGame) {
+            persistGame();
+        }
     }
 
     // ===========================
@@ -2090,6 +2092,17 @@ public class GameActivity extends AppCompatActivity {
             // they won the game, so also figure out the score
             body = String.format(getString(R.string.game_over_win_body), calculateStars());
         }
+
+        // delete any saved game data
+        try {
+            deleteFile(SAVEGAMEFILENAME);
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+        // set flag so when we hit onPause, don't try to save data
+        _persistGame = false;
 
         // instantiate an AlertDialog.Builder with its constructor
         AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);

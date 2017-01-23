@@ -1,16 +1,16 @@
 <resources>
     <string name="app_name">Movement to Contact</string>
-    <string name="app_info">Version 1.0 - October 2016</string>
+    <string name="app_info">Version 1.0 - January 2017</string>
     <string name="title_activity_help">HelpActivity</string>
     <string name="music">Music</string>
     <string name="soundfx">Sound Effects</string>
     <string name="attackmsg_nosup">%1$s was damaged.</string>
-    <string name="attackmsg_sup">%1$s was damaged and suppressed.</string>
+    <string name="attackmsg_sup">%1$s was damaged.</string>
     <string name="attackmsg_miss">%1$s was not damaged.</string>
     <string name="attackmsg_killed">%1$s is no longer combat effective.</string>
     <string name="turn">Movement To Contact - Turn %1$s (%2$s)</string>
     <string name="you">You</string>
-    <string name="computer">Computer</string>
+    <string name="computer">Enemy</string>
     <string name="scrub_desc">Scrub is easy to move through but does not provide any cover.</string>
     <string name="woods_desc">Woods can help conceal enemy units and do provide some cover when defending.</string>
     <string name="rocky_desc">Rocky terrain is tough to move into, but provides great benefits when defending against an attack.</string>
@@ -20,12 +20,12 @@
     <string name="combat_ineffective">%1$s (Not combat effective)</string>
     <string name="suppressed">%1$s (suppressed)</string>
     <string name="move_left">%1$s (%2$d move left)</string>
-    <string name="already_attacked">%1$s (already attacked this turn)</string>
+    <string name="already_attacked">%1$s (already attacked)</string>
     <string name="out_of_range">%1$s (out of range)</string>
     <string name="opfor_infantry">Enemy infantry squads are not as strong as your platoons, but can easily disappear back into the terrain when you are not adjacent to them.</string>
     <string name="opfor_mg">An enemy machine gun team that can attack two squares away.</string>
     <string name="opfor_sniper">Enemy sniper teams can pin down your units from a greater distance and cause them to be suppressed easily.</string>
-    <string name="player_hq">A headquarters unit can remove suppression from any unit it is adjacent to at the end of the player\'s turn. Plus, any enemy unit within two squares always remains visible. However, it doesn\'t pack much of a punch.</string>\
+    <string name="player_hq">A headquarters unit can remove suppression from any unit it is adjacent to at the end of the your turn. Plus, any enemy unit within two squares always remains visible. However, it doesn\'t pack much of an offensive punch.</string>\
     <string name="player_infantry">The infantry platoon consists of several squads and a mixture of semi-automatic rifles and machine guns. Infantry platoons can only attaack adjacent enemy units.</string>
     <string name="player_mg">The machine gun section provides the company with additional firepower and can attack enemy units two squares away.</string>
     <string name="player_mortar">The mortar section provides an indirect attack capability up to five squares away. The mortar section can also conduct \"recon by fire\" by attacking into terrain to identify any potential enemy units hiding there.</string>
@@ -36,8 +36,8 @@
     <string name="dialog_settings">Settings</string>
     <string name="game_over_win_title">Mission Accomplished</string>
     <string name="game_over_lose_title">Mission Failed</string>
-    <string name="game_over_lose_body">You have failed to clear the sector which will result in a failure of the larger battalion attack.</string>
-    <string name="game_over_win_body">You have successfully cleared this sector allowing the larger battalion attack to occur. Based on turns it took and status of your company, you have earned %1$d out of 3 stars.</string>
+    <string name="game_over_lose_body">You did not clear this sector which will result in the failure of the battalion assault againt the enemy stronghold.</string>
+    <string name="game_over_win_body">You successfully cleared this sector allowing the larger battalion attack to occur. Based on the number of turns it took and status of your company, you have earned %1$d out of 3 stars.</string>
 
 </resources>
 
