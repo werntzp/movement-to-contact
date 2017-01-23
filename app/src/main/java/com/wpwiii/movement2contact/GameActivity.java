@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.view.View;
@@ -705,7 +706,7 @@ public class GameActivity extends AppCompatActivity {
         Log.d(TAG, "Enter doOpForTurn");
 
         // disable end turn button
-        endTurnButton.setBackgroundColor(Color.parseColor("#545858"));
+        endTurnButton.setBackgroundResource(R.drawable.button_border_disabled);
         endTurnButton.setTextColor(Color.parseColor("#c0c0c0"));
         endTurnButton.setEnabled(false);
 
@@ -979,7 +980,7 @@ public class GameActivity extends AppCompatActivity {
             @Override
             public void afterDelay() {
                 // turn button back on
-                endTurnButton.setBackgroundColor(Color.parseColor("#000000"));
+                endTurnButton.setBackgroundResource(R.drawable.button_border_enabled);
                 endTurnButton.setTextColor(Color.parseColor("#ffff00"));
                 endTurnButton.setEnabled(true);
             }
@@ -1597,20 +1598,30 @@ public class GameActivity extends AppCompatActivity {
         Button buttonEndTurn = (Button) findViewById(R.id.button1);
         buttonEndTurn.setTypeface(tf);
         // button click
-        buttonEndTurn.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // do the computer part of this turn
-                _turnString = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.computer));
-                _turnText.setText(_turnString);
-                _turnText.invalidate();
-                // after a 1 second delay, end the turn
-                Utils.delay(1, new Utils.DelayCallback() {
-                    @Override
-                    public void afterDelay() {
-                        doEndTurn();
-                    }
-                });
+        buttonEndTurn.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
 
+                Button btn = (Button) findViewById(R.id.button1);
+                if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                    btn.setTextColor(Color.parseColor("#ffffff"));
+                    btn.setBackgroundResource(R.drawable.button_border_selected);
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    btn.setTextColor(Color.parseColor("#ffff00"));
+                    btn.setBackgroundResource(R.drawable.button_border_enabled);
+                    // do the computer part of this turn
+                    _turnString = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.computer));
+                    _turnText.setText(_turnString);
+                    _turnText.invalidate();
+                    // after a 1 second delay, end the turn
+                    Utils.delay(1, new Utils.DelayCallback() {
+                        @Override
+                        public void afterDelay() {
+                            doEndTurn();
+                        }
+                    });
+                }
+                return true;
             }
         });
 

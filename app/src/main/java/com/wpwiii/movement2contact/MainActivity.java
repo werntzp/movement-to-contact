@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import android.util.Log;
 import java.io.FileOutputStream;
 import android.content.Context;
+import android.view.View.OnTouchListener;
+import 	android.view.MotionEvent;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -68,11 +70,11 @@ public class MainActivity extends AppCompatActivity {
         resumeButton.setEnabled(enableResume);
         if (enableResume) {
             resumeButton.setTextColor(Color.parseColor("#ffff00"));
-            resumeButton.setBackgroundColor(Color.parseColor("#000000"));
+            resumeButton.setBackgroundResource(R.drawable.button_border_enabled);
         }
         else {
             resumeButton.setTextColor(Color.parseColor("#c0c0c0"));
-            resumeButton.setBackgroundColor(Color.parseColor("#545858"));
+            resumeButton.setBackgroundResource(R.drawable.button_border_disabled);
         }
 
         Log.d(TAG, "onResume");
@@ -138,38 +140,64 @@ public class MainActivity extends AppCompatActivity {
         catch (Exception e) {
             enableResume = false;
         }
+
+        // enable or disable if a save file exists
         resumeButton.setEnabled(enableResume);
         if (enableResume) {
             resumeButton.setTextColor(Color.parseColor("#ffff00"));
-            resumeButton.setBackgroundColor(Color.parseColor("#000000"));
+            resumeButton.setBackgroundResource(R.drawable.button_border_enabled);
         }
         else {
             resumeButton.setTextColor(Color.parseColor("#c0c0c0"));
-            resumeButton.setBackgroundColor(Color.parseColor("#545858"));
+            resumeButton.setBackgroundResource(R.drawable.button_border_disabled);
         }
-        resumeButton.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
-                myIntent.putExtra("NEW_GAME", Boolean.FALSE);
-                startActivity(myIntent);
+
+        // now, set a touch listener to go load the file and resume the game
+        resumeButton.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                Button btn = (Button) findViewById(R.id.buttonResume);
+                if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                    btn.setTextColor(Color.parseColor("#ffffff"));
+                    btn.setBackgroundResource(R.drawable.button_border_selected);
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    btn.setTextColor(Color.parseColor("#ffff00"));
+                    btn.setBackgroundResource(R.drawable.button_border_enabled);
+                    Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
+                    myIntent.putExtra("NEW_GAME", Boolean.FALSE);
+                    startActivity(myIntent);
+                }
+                return true;
             }
         });
 
-        // add onclick to new game button
+        // add ontouchlistener to new game button; on the release of the button, go ahead and fire off new game activities
         Button newButton = (Button) findViewById(R.id.buttonNew);
         newButton.setTypeface(tft);
-        newButton.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                // starting a new game, so delete any saved game if it exists
-                try {
-                    deleteFile(SAVEGAMEFILENAME);
+        newButton.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                Button btn = (Button) findViewById(R.id.buttonNew);
+                if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                    btn.setTextColor(Color.parseColor("#ffffff"));
+                    btn.setBackgroundResource(R.drawable.button_border_selected);
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    btn.setTextColor(Color.parseColor("#ffff00"));
+                    btn.setBackgroundResource(R.drawable.button_border_enabled);
+                    // starting a new game, so delete any saved game if it exists
+                    try {
+                        deleteFile(SAVEGAMEFILENAME);
+                    }
+                    catch (Exception e) {
+                        // do nothing
+                    }
+                    Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
+                    myIntent.putExtra("NEW_GAME", Boolean.TRUE);
+                    startActivity(myIntent);
                 }
-                catch (Exception e) {
-                    // do nothing
-                }
-                Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
-                myIntent.putExtra("NEW_GAME", Boolean.TRUE);
-                startActivity(myIntent);
+                return true;
             }
         });
 
