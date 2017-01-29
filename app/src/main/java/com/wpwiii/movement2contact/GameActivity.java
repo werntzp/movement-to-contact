@@ -3,6 +3,7 @@ package com.wpwiii.movement2contact;
 import com.wpwiii.movement2contact.Prefs;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -26,6 +27,7 @@ import android.os.Handler;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import android.content.Context;
 
 class Utils {
@@ -239,6 +241,7 @@ public class GameActivity extends AppCompatActivity {
     MediaPlayer _mpSniper = null;
     int _enemyUnitCount = 0;
     boolean _persistGame = true;
+    boolean _enemyTurn = false;
 
     // ===========================
     // calculateScore
@@ -292,6 +295,170 @@ public class GameActivity extends AppCompatActivity {
         v.setBackgroundColor(Color.BLACK);
     }
 
+
+    // ===========================
+    // doAttack
+    // ===========================
+    void doAttack(MapSquare fromSq, MapSquare toSq) {
+
+        Log.d(TAG, "Enter doAttack");
+
+        Unit redUnit = toSq.getUnit();
+        Unit blueUnit = fromSq.getUnit();
+        ImageView v = null;
+        int pos = 0;
+        int icon = 0;
+        int attackNum = 0;
+        int roll = 0;
+        int damage = 0;
+        String attackMsg = "";
+        int secs = 2;
+        int img = 0;
+        boolean isHit = false;
+        boolean isSuppressed = false;
+        boolean isNoLongerCombatEffective = false;
+
+        // first, if enemy wasn't visible, it now is, so draw it
+        pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
+        v = (ImageView) _mapAdapter.getItem(pos);
+
+        try {
+            img = getUnitIcon(redUnit);
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
+        } catch (Exception e) {
+            img = toSq.getTerrainType();
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
+        }
+
+        // also, highight it in red
+        selectUnit(pos, Color.RED);
+        final int unitPos = pos;
+
+        // next, our unit has attacked, so set property
+        blueUnit.setHasAttacked(true);
+
+        // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
+        attackNum = blueUnit.getAttackNumber();
+        switch (toSq.getTerrainType()) {
+            case R.drawable.woods:
+            case R.drawable.rocky:
+                attackNum = attackNum - 1;
+        }
+        switch (blueUnit.getEff()) {
+            case Unit.EFF_AMBER:
+                attackNum = attackNum - 1;
+                break;
+            case Unit.EFF_RED:
+                attackNum = attackNum - 2;
+        }
+
+        roll = getRandomNumber(10, 1);
+        Log.d(TAG, "attack number: " + Integer.toString(attackNum));
+        Log.d(TAG, "attack roll: " + Integer.toString(roll));
+
+        // pick a sound to play
+        playSound(blueUnit);
+
+        // issue #39 - need to simulate attack by mortar on empty square, but can skip a lot of this if that is the case
+        if (redUnit != null) {
+            // determine whether hit took place and then any damage
+            if (roll <= attackNum) {
+                // hit!
+                isHit = true;
+                damage = getRandomNumber(10, 1);
+                Log.d(TAG, "damage roll: " + Integer.toString(damage));
+                if (damage <= 8) {
+                    redUnit.setEff(redUnit.getEff() - 1);
+                    Log.d(TAG, "Enemy unit effectiveness now " + redUnit.getEff());
+                }
+
+                // set the unit to visible since we hit it
+                redUnit.setIsVisible(true);
+                // certain types of unit cause supression
+                switch (blueUnit.getType()) {
+                    case Unit.TYPE_MORTAR:
+                    case Unit.TYPE_MG:
+                        redUnit.setIsSuppressed(true);
+                        redUnit.setTurnSuppressed(_turn);
+                        isSuppressed = true;
+                }
+                // update array
+                _mapSquares[pos].setUnit(redUnit);
+            }
+        }
+
+        // if combat effectiveness now black, just get rid of it
+        if ((redUnit != null) && (redUnit.getEff() == Unit.EFF_BLACK)) {
+            img = toSq.getTerrainType();
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
+            isNoLongerCombatEffective = true;
+            toSq.setUnit(null);
+            _mapSquares[pos] = toSq;
+            secs = 1;
+            deselectUnit(unitPos);
+            // reduce number of enemy units by one
+            _enemyUnitCount--;
+            Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
+        } else {
+            Utils.delay(secs, new Utils.DelayCallback() {
+                @Override
+                public void afterDelay() {
+                    deselectUnit(unitPos);
+
+                }
+            });
+        }
+
+
+        // issue 34 - if player attacking enemy, tell less info
+        if (blueUnit.getOwner() == Unit.OWNER_PLAYER) {
+            // next, see if unit was there
+            if (redUnit == null) {
+                attackMsg = getString(R.string.attackmsg_nounit);
+            } else {
+                attackMsg = String.format(getString(R.string.player_attackmsg), blueUnit.getName(), redUnit.getName());
+            }
+        } else {
+            // if enemy attacking us, tell more info
+            if ((isHit) && (damage <= 8) && (isSuppressed)) {
+                // they were hit and suppressed
+                attackMsg = String.format(getString(R.string.attackmsg_sup), redUnit.getName());
+            } else if ((isHit) && (damage <= 8) && (!isSuppressed)) {
+                // they were hit but not suppressed
+                attackMsg = String.format(getString(R.string.attackmsg_nosup), redUnit.getName());
+            } else if (isNoLongerCombatEffective) {
+                // destroyed
+                attackMsg = String.format(getString(R.string.attackmsg_killed), redUnit.getName());
+            }
+            else {
+                // not even hit or hit but no damage, so same message
+                attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
+            }
+        }
+
+        /*
+        try {
+            Thread.sleep(1000);
+        }
+        catch (Exception e) {
+            // do nothing
+        }
+        */
+
+        _actionText.setText(attackMsg);
+
+        // are there any enemy units left?
+        if (_enemyUnitCount == 0) {
+            showEndGameDialog(GAME_OVER_WIN);
+        }
+
+        Log.d(TAG, "Exit doAttack");
+
+    }
+
     // ===========================
     // doClick
     // ===========================
@@ -304,6 +471,12 @@ public class GameActivity extends AppCompatActivity {
         int owner = Unit.OWNER_PLAYER;
         int icon = 0;
         ImageView imgClicked =  (ImageView) v;
+
+        // issue #2
+        // if we're in middle of enemy turn, don't handle clicks
+        if (_enemyTurn) {
+            return;
+        }
 
         // figure out what they clicked on
         ms = _mapSquares[position];
@@ -330,7 +503,12 @@ public class GameActivity extends AppCompatActivity {
                 deselectUnit(position);
                 return;
             }
-            _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+            if (_activeUnit.getHasAttacked()) {
+                _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+            }
+            else {
+                _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+            }
             return;
         }
 
@@ -346,7 +524,12 @@ public class GameActivity extends AppCompatActivity {
                 }
                 deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
                 selectUnit(position, Color.BLUE);
-                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                if (_activeUnit.getHasAttacked()) {
+                    _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                }
+                else {
+                    _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                }
                 _activeUnit = u;
                 _activeSq = ms;
                 return;
@@ -360,7 +543,12 @@ public class GameActivity extends AppCompatActivity {
                 }
                 if (doMove(_activeSq, ms)) {
                     _activeUnit = ms.getUnit();
-                    _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                    if (_activeUnit.getHasAttacked()) {
+                        _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                    }
+                    else {
+                        _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                    }
                 }
 
                 return;
@@ -400,7 +588,12 @@ public class GameActivity extends AppCompatActivity {
                 selectUnit(position, Color.BLUE);
                 _activeUnit = u;
                 _activeSq = ms;
-                _actionText.setText(String.format(getString(R.string.move_left), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                if (_activeUnit.getHasAttacked()) {
+                    _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                }
+                else {
+                    _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
+                }
                 return;
             }
             // (b) if enemy there and in range, attack
@@ -419,8 +612,13 @@ public class GameActivity extends AppCompatActivity {
                     }
                 }
             }
+            // (c) we have a mortar firing into an empty space, which is still legal
+            if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+                doAttack(_activeSq, ms);
+            }
+            // (d)
             else if (_activeSq != null)  {
-                _actionText.setText(String.format(getString(R.string.out_of_range), _activeUnit.getName()));
+                _actionText.setText(R.string.out_of_range);
             }
 
             // (c) otherwise, ignore
@@ -705,6 +903,9 @@ public class GameActivity extends AppCompatActivity {
 
         Log.d(TAG, "Enter doOpForTurn");
 
+        // set flag here so we know we're in enemy turn
+        _enemyTurn = true;
+
         // disable end turn button
         endTurnButton.setBackgroundResource(R.drawable.button_border_disabled);
         endTurnButton.setTextColor(Color.parseColor("#c0c0c0"));
@@ -882,6 +1083,10 @@ public class GameActivity extends AppCompatActivity {
             }
 
         }
+
+        // and reset on way out
+        _enemyTurn = false;
+
 
     }
 
@@ -1067,159 +1272,7 @@ public class GameActivity extends AppCompatActivity {
 
     }
 
-    // ===========================
-    // doAttack
-    // ===========================
-    void doAttack(MapSquare fromSq, MapSquare toSq) {
 
-        Log.d(TAG, "Enter doAttack");
-
-        Unit redUnit = toSq.getUnit();
-        Unit blueUnit = fromSq.getUnit();
-        ImageView v = null;
-        int pos = 0;
-        int icon = 0;
-        int attackNum = 0;
-        int roll = 0;
-        int damage = 0;
-        String attackMsg = "";
-        int secs = 2;
-        int img = 0;
-        boolean isHit = false;
-        boolean isSuppressed = false;
-        boolean isNoLongerCombatEffective = false;
-
-        // first, if enemy wasn't visible, it now is, so draw it
-        pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
-        v = (ImageView) _mapAdapter.getItem(pos);
-
-        try {
-            img = getUnitIcon(redUnit);
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
-        }
-        catch (Exception e) {
-            img = toSq.getTerrainType();
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
-        }
-
-        // also, highight it in red
-        selectUnit(pos, Color.RED);
-        final int unitPos = pos;
-
-        // next, our unit has attacked, so set property
-        blueUnit.setHasAttacked(true);
-
-        // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
-        attackNum = blueUnit.getAttackNumber();
-        switch (toSq.getTerrainType()) {
-            case R.drawable.woods:
-            case R.drawable.rocky:
-                attackNum = attackNum - 1;
-        }
-        switch (blueUnit.getEff()) {
-            case Unit.EFF_AMBER:
-                attackNum = attackNum - 1;
-                break;
-            case Unit.EFF_RED:
-                attackNum = attackNum - 2;
-        }
-
-        roll = getRandomNumber(10, 1);
-        Log.d(TAG, "attack number: " + Integer.toString(attackNum));
-        Log.d(TAG, "attack roll: " + Integer.toString(roll));
-
-        // pick a sound to play
-        playSound(blueUnit);
-
-        // determine whether hit took place and then any damage
-        if (roll <= attackNum) {
-            // hit!
-            isHit = true;
-            damage = getRandomNumber(10, 1);
-            Log.d(TAG, "damage roll: " + Integer.toString(damage));
-            if (damage <= 8) {
-                redUnit.setEff(redUnit.getEff() - 1);
-                Log.d(TAG, "Enemy unit effectiveness now " + redUnit.getEff());
-            }
-
-            // set the unit to visible since we hit it
-            redUnit.setIsVisible(true);
-            // certain types of unit cause supression
-            switch (blueUnit.getType()) {
-                case Unit.TYPE_MORTAR:
-                case Unit.TYPE_MG:
-                    redUnit.setIsSuppressed(true);
-                    redUnit.setTurnSuppressed(_turn);
-                    isSuppressed = true;
-            }
-            // update array
-            _mapSquares[pos].setUnit(redUnit);
-        }
-
-        // if combat effectiveness now black, just get rid of it
-        if (redUnit.getEff() == Unit.EFF_BLACK) {
-            img = toSq.getTerrainType();
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
-            isNoLongerCombatEffective = true;
-            toSq.setUnit(null);
-            _mapSquares[pos] = toSq;
-            secs = 1;
-            deselectUnit(unitPos);
-            // reduce number of enemy units by one
-            _enemyUnitCount--;
-            Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
-        }
-        else {
-            Utils.delay(secs, new Utils.DelayCallback() {
-                @Override
-                public void afterDelay() {
-                    deselectUnit(unitPos);
-
-                }
-            });
-        }
-
-        // decide on which message to use
-        if ((isHit) && (damage <=8) && (isSuppressed)) {
-            // they were hit and suppressed
-            attackMsg = String.format(getString(R.string.attackmsg_sup), redUnit.getName());
-        }
-        else if ((isHit) && (damage <=8) && (!isSuppressed)) {
-            // they were hit but not suppressed
-            attackMsg = String.format(getString(R.string.attackmsg_nosup), redUnit.getName());
-        }
-        else if (isNoLongerCombatEffective) {
-            // destroyed
-            attackMsg = String.format(getString(R.string.attackmsg_killed), redUnit.getName());
-        }
-        else {
-            // not even hit or hit but no damage, so same message
-            attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
-        }
-
-
-        /*
-        try {
-            Thread.sleep(1000);
-        }
-        catch (Exception e) {
-            // do nothing
-        }
-        */
-
-        _actionText.setText(attackMsg);
-
-        // are there any enemy units left?
-        if (_enemyUnitCount == 0) {
-            showEndGameDialog(GAME_OVER_WIN);
-        }
-
-        Log.d(TAG, "Exit doAttack");
-
-    }
 
 
     // ===========================
@@ -1526,6 +1579,8 @@ public class GameActivity extends AppCompatActivity {
         _mapSquares = new MapSquare[MAX_ARRAY];
         MapSquare ms;
 
+        Log.d(TAG, "newGame");
+
         // iterate and populate mapsquares
         int row = 1;
         int col = 1;
@@ -1583,12 +1638,15 @@ public class GameActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
+        Log.d(TAG, "onCreate");
+
         // setu p the media players needed
         _mpInfPlatoon = MediaPlayer.create(this, R.raw.inf_platoon);
         _mpInfSquad = MediaPlayer.create(this, R.raw.inf_squad);
         _mpMG = MediaPlayer.create(this, R.raw.mg);
         _mpMortar = MediaPlayer.create(this, R.raw.mortar);
         _mpSniper = MediaPlayer.create(this, R.raw.sniper);
+        String newGame = "true";
 
         // get the custom font
         Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
@@ -1656,15 +1714,21 @@ public class GameActivity extends AppCompatActivity {
         });
 
         // new game?
-        if (_myIntent != null) {
-            if (_myIntent.getBooleanExtra("NEW_GAME", Boolean.TRUE)) {
-                newGame();
+        if (savedInstanceState == null) {
+            Bundle extras = getIntent().getExtras();
+            if(extras == null) {
+                newGame = "true";
             } else {
-                resumeGame();
+                newGame = extras.getString("NEW_GAME");
             }
+        } else {
+            newGame = (String) savedInstanceState.getSerializable("NEW_GAME");
         }
-        else {
+
+        if (newGame.equalsIgnoreCase("true")) {
             newGame();
+        } else {
+            resumeGame();
         }
 
         // pass in the array of image ids
@@ -1710,13 +1774,56 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     public void persistGame() {
 
+        StringBuilder csv = new StringBuilder();
+        MapSquare ms = null;
+        Unit u = null;
 
         Log.d(TAG, "persistGame");
 
+        // loop through the mapsqaures array and create csv file in format of:
+        // <first row> current turn
+        csv.append(Integer.toString(_turn) + "\r\n");
+
+        //
+        for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
+            ms = _mapSquares[ctr];
+            // row
+            // col
+            // terrain type
+            csv.append(ms.getRow() + "," + ms.getCol() + "," + ms.getTerrainType());
+            // unit owner
+            u = ms.getUnit();
+            if (u == null) {
+                // put a -1 where there' be a unit so we don't try to instantiate one later
+                csv.append(",-1");
+            }
+            else {
+                // unit name
+                // unit type
+                // unit size
+                // unit owner
+                // unit isvisible
+                // unit issuppressed
+                // unit turnsuppressed
+                // unit has attacked
+                // unit attackrange
+                // unit attacknumber
+                // unit agg
+                // unit eff
+                // unit maxmove
+                // unit remaining move
+                csv.append("," + u.getName() + "," + u.getType() + "," + u.getSize() + "," + u.getOwner() + "," + u.getIsVisible() + "," + u.getIsSuppressed() + "," + u.getTurnSuppressed() +
+                    "," + u.getHasAttacked() + "," + u.getAttackRange() + "," + u.getAttackNumber() + "," + u.getAggression() + "," + u.getEff() +
+                    "," + u.getMaxMove() + "," + u.getRemainingMove());
+
+            }
+            csv.append("\r\n");
+
+        }
 
         try {
             FileOutputStream fos = openFileOutput(SAVEGAMEFILENAME, Context.MODE_PRIVATE);
-            fos.write("Hi".getBytes());
+            fos.write(csv.toString().getBytes("UTF-8"));
             fos.close();
         }
         catch (Exception e) {
@@ -1840,6 +1947,99 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     void resumeGame() {
 
+        Log.d(TAG, "resumeGame");
+
+
+        String line = null;
+        String[] vals = null;
+        // create array of map objects
+        _mapSquares = new MapSquare[MAX_ARRAY];
+        MapSquare ms;
+        int row = 1;
+        int col = 1;
+        int terrainType = 0;
+        int ctr = 0;
+        Unit unit = null;
+        String unitName = "";
+
+        // open up file from directory, read in the bytes and build out the map
+
+        try {
+            FileInputStream fis = openFileInput(SAVEGAMEFILENAME);
+            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            BufferedReader br = new BufferedReader(isr);
+            StringBuilder sb = new StringBuilder();
+            // first line is game turn
+            line = br.readLine();
+            _turn = Integer.parseInt(line);
+            // every line after that is map square
+            while ((line = br.readLine()) != null) {
+                vals = line.split(",");
+                ms = new MapSquare();
+                ms.setRow(Integer.parseInt(vals[0]));
+                ms.setCol(Integer.parseInt(vals[1]));
+                ms.setTerrainType(Integer.parseInt(vals[2]));
+                _imageIds[ctr] = Integer.parseInt(vals[2]);
+                // 3 - unit name (x)
+                // 4 - unit type (x)
+                // 5 - unit size (x)
+                // 6 - unit owner (x)
+                // 7 - unit isvisible (x)
+                // 8 - unit issuppressed (x)
+                // 9 - unit turnsuppressed (x)
+                // 10 - unit has attacked (x)
+                // 11 - unit attackrange (x)
+                // 12 - unit attacknumber (x)
+                // 13 - unit agg (x)
+                // 14 - unit eff (x)
+                // 15 - unit maxmove (x)
+                // 16 - unit remaining move (x)
+                unitName = vals[3];
+                if (unitName.equalsIgnoreCase("-1")) {
+                    // no unit in this square, so just add null one to the array
+                    ms.setUnit(null);
+                }
+                else {
+                    // yes, unit there so create it
+                    unit = new Unit(vals[3], Integer.parseInt(vals[4]), Integer.parseInt(vals[5]), Integer.parseInt(vals[6]),
+                            Integer.parseInt(vals[11]), Integer.parseInt(vals[12]), Integer.parseInt(vals[15]));
+                    unit.setIsVisible(Boolean.parseBoolean(vals[7]));
+                    unit.setIsSuppressed(Boolean.parseBoolean(vals[8]));
+                    unit.setTurnSuppressed(Integer.parseInt(vals[9]));
+                    unit.setHasAttacked(Boolean.parseBoolean(vals[10]));
+                    unit.setAggression(Integer.parseInt(vals[13]));
+                    unit.setEff(Integer.parseInt(vals[14]));
+                    unit.setRemainingMove(Integer.parseInt(vals[16]));
+                    ms.setUnit(unit);
+                    // and we need to add that to the map (if visible)
+                    if (unit.getIsVisible()) {
+                        _imageIds[ctr] = getUnitIcon(unit);
+                    }
+                    // and count up how many enemy units
+                    if (unit.getOwner() == Unit.OWNER_OPFOR) {
+                        _enemyUnitCount++;
+                    }
+
+                }
+
+                // add mapsquare to the array
+                _mapSquares[ctr] = ms;
+
+                ctr++;
+            }
+
+
+
+
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+        // set the initial turn text
+        _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
+        _actionString = "";
+
+
     }
 
     // ===========================
@@ -1864,6 +2064,7 @@ public class GameActivity extends AppCompatActivity {
                 // create a unit class
                 unit = new Unit(items[0], Integer.parseInt(items[2]), Integer.parseInt(items[3]), Integer.parseInt(items[1]),
                         Integer.parseInt(items[4]), Integer.parseInt(items[5]), Integer.parseInt(items[6]));
+                unit.setIsVisible(true);
                 // drop that into the map array
                 pos = getArrayPosforRowCol(Integer.parseInt(items[7]), Integer.parseInt(items[8]));
                 _mapSquares[pos].setUnit(unit);

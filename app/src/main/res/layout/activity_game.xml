@@ -47,7 +47,7 @@
             android:id="@+id/textView8"
             android:textColor="#ffff00"
             android:background="#000000"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:layout_weight="0.26" />
 
         <Button

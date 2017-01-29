@@ -35,36 +35,6 @@
         android:layout_alignParentStart="true"
         android:cropToPadding="false" />
 
-    <Button
-        android:text="@string/new_game"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/buttonNew"
-        android:maxWidth="125dp"
-        android:background="@drawable/button_border_enabled"
-        android:textColor="#ffff00"
-        android:textStyle="bold"
-        android:textSize="20sp"
-        android:layout_below="@+id/textViewAppName"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="110dp"
-        android:layout_marginBottom="360dp" />
-
-    <Button
-        android:text="@string/resume_game"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/buttonResume"
-        android:maxWidth="100dp"
-        android:background="@drawable/button_border_disabled"
-        android:textColor="#c0c0c0"
-        android:textStyle="bold"
-        android:textSize="20sp"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="215dp"
-        android:layout_marginBottom="360dp"
-        android:layout_below="@+id/textViewAppName" />
-
     <TextView
         android:text="@string/app_name"
         android:layout_width="wrap_content"
@@ -96,5 +66,32 @@
         android:layout_alignParentStart="true"
         android:layout_marginTop="618dp"
         android:layout_marginStart="370dp"/>
+
+    <Button
+        android:text="@string/resume_game"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/buttonResume"
+        android:maxWidth="125dp"
+        android:background="@drawable/button_border_disabled"
+        android:textColor="#c0c0c0"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:layout_below="@+id/textViewAppName"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="62dp" />
+
+    <Button
+        android:text="@string/new_game"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/buttonNew"
+        android:maxWidth="125dp"
+        android:background="@drawable/button_border_enabled"
+        android:textColor="#ffff00"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:layout_below="@+id/textViewAppName"
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                     btn.setTextColor(Color.parseColor("#ffff00"));
                     btn.setBackgroundResource(R.drawable.button_border_enabled);
                     Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
-                    myIntent.putExtra("NEW_GAME", Boolean.FALSE);
+                    myIntent.putExtra("NEW_GAME", "false");
                     startActivity(myIntent);
                 }
                 return true;
@@ -194,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
                         // do nothing
                     }
                     Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
-                    myIntent.putExtra("NEW_GAME", Boolean.TRUE);
+                    myIntent.putExtra("NEW_GAME", "true");
                     startActivity(myIntent);
                 }
                 return true;
@@ -206,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
         imageViewHelp.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, HelpActivity.class);
-                myIntent.putExtra("NEW_GAME", Boolean.FALSE);
+                myIntent.putExtra("NEW_GAME", "false");
                 startActivity(myIntent);
             }
         });
