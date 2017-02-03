@@ -2117,6 +2117,7 @@ public class GameActivity extends AppCompatActivity {
         int attack = 0;
         int move = 0;
         int aggression = Unit.AGG_NO;
+        int a = Unit.AGG_NO;
 
         // first, let's figure out how many units we need to base off the templates in the CSV
         // how many bad guys (between 5 and 10)
@@ -2142,7 +2143,27 @@ public class GameActivity extends AppCompatActivity {
                 move = Integer.parseInt(items[6]);
 
                 // for each enemy unit, pick an aggression factor (which we'll use later when it comes to movement)
-                aggression = getRandomNumber(3, 1);
+                a = getRandomNumber(10, 1);
+
+                switch (a) {
+                    case 1:
+                    case 2:
+                    case 3:
+                        aggression = Unit.AGG_NO;
+                        break;
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        aggression = Unit.AGG_SOME;
+                        break;
+                    case 8:
+                    case 9:
+                    case 10:
+                        aggression = Unit.AGG_VERY;
+                        break;
+                }
+
 
                 // based on type, do another loop
                 switch (type) {
