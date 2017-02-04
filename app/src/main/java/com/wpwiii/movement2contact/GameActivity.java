@@ -330,6 +330,7 @@ public class GameActivity extends AppCompatActivity {
             img = toSq.getTerrainType();
             v.setImageResource(img);
             _mapAdapter.setItem(v, img, pos);
+            Log.e(TAG, e.getMessage());
         }
 
         // also, highight it in red
@@ -342,13 +343,18 @@ public class GameActivity extends AppCompatActivity {
         // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
         attackNum = blueUnit.getAttackNumber();
         switch (toSq.getTerrainType()) {
+            case R.drawable.scrub:
+                attackNum++;
+                break;
             case R.drawable.woods:
+                attackNum--;
+                break;
             case R.drawable.rocky:
-                attackNum = attackNum - 1;
+                attackNum = attackNum - 2;
         }
         switch (blueUnit.getEff()) {
             case Unit.EFF_AMBER:
-                attackNum = attackNum - 1;
+                attackNum--;
                 break;
             case Unit.EFF_RED:
                 attackNum = attackNum - 2;
@@ -368,7 +374,12 @@ public class GameActivity extends AppCompatActivity {
                 // hit!
                 isHit = true;
                 damage = getRandomNumber(10, 1);
-                Log.d(TAG, "damage roll: " + Integer.toString(damage));
+                // issue #36 - if unit alreaady suppressed, easier to damage
+                if (redUnit.getIsSuppressed()) {
+                    damage--;
+                }
+
+                Log.d(TAG, "damage roll after any suppression modifier: " + Integer.toString(damage));
                 if (damage <= 8) {
                     redUnit.setEff(redUnit.getEff() - 1);
                     Log.d(TAG, "Enemy unit effectiveness now " + redUnit.getEff());
@@ -382,6 +393,7 @@ public class GameActivity extends AppCompatActivity {
                     case Unit.TYPE_MG:
                         redUnit.setIsSuppressed(true);
                         redUnit.setTurnSuppressed(_turn);
+                        Log.d(TAG, redUnit.getName() + " is suppressed");
                         isSuppressed = true;
                 }
                 // update array
@@ -438,15 +450,6 @@ public class GameActivity extends AppCompatActivity {
                 attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
             }
         }
-
-        /*
-        try {
-            Thread.sleep(1000);
-        }
-        catch (Exception e) {
-            // do nothing
-        }
-        */
 
         _actionText.setText(attackMsg);
 
@@ -761,15 +764,6 @@ public class GameActivity extends AppCompatActivity {
         redUnit.setIsVisible(true);
         _mapSquares[redUnitPos].setUnit(redUnit);
 
-        // freeze the ui
-        /*
-        try {
-            Thread.sleep(2000);
-        }
-        catch (Exception e) {
-            // do nothing
-        }
-        */
 
     }
 
@@ -2076,6 +2070,7 @@ public class GameActivity extends AppCompatActivity {
         }
         catch (IOException ioe) {
             // do nothing
+            Log.e(TAG, ioe.getMessage());
         }
 
 
@@ -2200,6 +2195,7 @@ public class GameActivity extends AppCompatActivity {
         }
         catch (IOException ioe) {
             // do nothing
+            Log.e(TAG, ioe.getMessage());
         }
 
         // store number of enemy units

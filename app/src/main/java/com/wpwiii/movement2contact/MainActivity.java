@@ -139,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
         }
         catch (Exception e) {
             enableResume = false;
+            Log.e(TAG, e.getMessage());
         }
 
         // enable or disable if a save file exists
@@ -192,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                     catch (Exception e) {
                         // do nothing
+                        Log.e(TAG, e.getMessage());
                     }
                     Intent myIntent = new Intent(MainActivity.this, GameActivity.class);
                     myIntent.putExtra("NEW_GAME", "true");
@@ -258,7 +260,6 @@ public class MainActivity extends AppCompatActivity {
                                 // media player failed, so kick it on again
                                 _mediaPlayer = MediaPlayer.create(MainActivity.this, R.raw.holst);
                                 startMediaPlayer();
-
                             }
                         }
                         else {
