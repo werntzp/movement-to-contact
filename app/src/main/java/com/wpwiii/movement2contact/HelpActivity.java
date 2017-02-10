@@ -1,12 +1,14 @@
 package com.wpwiii.movement2contact;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -30,12 +32,26 @@ public class HelpActivity extends AppCompatActivity {
         // add onclick to help button
         Button okButton = (Button) findViewById(R.id.button6);
         okButton.setTypeface(tf);
-        okButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                finish();
+        okButton.setTextColor(Color.parseColor("#ffff00"));
+        okButton.setBackgroundResource(R.drawable.button_border_enabled);
+
+        // now, set a touch listener to go load the file and resume the game
+        okButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                Button btn = (Button) findViewById(R.id.button6);
+                if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                    btn.setTextColor(Color.parseColor("#ffffff"));
+                    btn.setBackgroundResource(R.drawable.button_border_selected);
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    btn.setTextColor(Color.parseColor("#ffff00"));
+                    btn.setBackgroundResource(R.drawable.button_border_enabled);
+                    finish();
+                }
+                return true;
             }
         });
-
 
 
     }
