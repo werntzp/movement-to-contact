@@ -317,6 +317,13 @@ public class GameActivity extends AppCompatActivity {
         boolean isHit = false;
         boolean isSuppressed = false;
         boolean isNoLongerCombatEffective = false;
+        int s = 0;
+
+        // if blue unit already attacked this turn, pop out
+        if (blueUnit.getHasAttacked()) {
+            return;
+        }
+
 
         // first, if enemy wasn't visible, it now is, so draw it
         pos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
@@ -389,8 +396,19 @@ public class GameActivity extends AppCompatActivity {
                 redUnit.setIsVisible(true);
                 // certain types of unit cause supression
                 switch (blueUnit.getType()) {
-                    case Unit.TYPE_MORTAR:
                     case Unit.TYPE_MG:
+                        // 50% chance mg team causes suppression
+                        s = getRandomNumber(2, 1);
+                        if (s == 1) {
+                            redUnit.setIsSuppressed(true);
+                            redUnit.setTurnSuppressed(_turn);
+                            Log.d(TAG, redUnit.getName() + " is suppressed");
+                            isSuppressed = true;
+                        }
+
+                        break;
+                    case Unit.TYPE_SNIPER:
+                    case Unit.TYPE_MORTAR:
                         redUnit.setIsSuppressed(true);
                         redUnit.setTurnSuppressed(_turn);
                         Log.d(TAG, redUnit.getName() + " is suppressed");
@@ -1569,9 +1587,12 @@ public class GameActivity extends AppCompatActivity {
     // newGame
     // ===========================
     void newGame() {
+
         // create array of map objects
         _mapSquares = new MapSquare[MAX_ARRAY];
         MapSquare ms;
+        int x = 0;
+        int enemyUnits = 0;
 
         Log.d(TAG, "newGame");
 
@@ -1604,6 +1625,21 @@ public class GameActivity extends AppCompatActivity {
         // next, manually set friendly and enemy units
         setUpFriendlyUnits();
         setUpEnemyUnits();
+
+        // initial pop up with quick game info and rough number of enemy units
+        x = getRandomNumber(3, 0);
+        enemyUnits = _enemyUnitCount + x;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+        builder.setMessage(String.format(getString(R.string.opening_msg), Integer.toString(enemyUnits)));
+        builder.setTitle(getString(R.string.opening_msg_title));
+        //builder.setIcon(R.drawable.flag);
+        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                // do nothing, just close
+            }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
 
         // set the initial turn text
         _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
@@ -1719,11 +1755,18 @@ public class GameActivity extends AppCompatActivity {
             newGame = (String) savedInstanceState.getSerializable("NEW_GAME");
         }
 
-        if (newGame.equalsIgnoreCase("true")) {
-            newGame();
-        } else {
-            resumeGame();
+        try {
+            if (newGame.equalsIgnoreCase("true")) {
+                newGame();
+            } else {
+                resumeGame();
+            }
         }
+        catch (Exception e) {
+            newGame();
+            Log.e(TAG, e.getMessage());
+        }
+
 
         // pass in the array of image ids
         _mapAdapter.setImageArray(_imageIds);

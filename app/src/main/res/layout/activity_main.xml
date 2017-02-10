@@ -21,7 +21,6 @@
         android:scaleType="fitXY"
         android:layout_marginLeft="0dp"
         android:layout_marginRight="0dp"
-        android:layout_marginTop="0dp"
         android:layout_marginBottom="15dp"
         android:padding="0dp"
         android:paddingBottom="0dp"
@@ -31,7 +30,6 @@
         android:paddingTop="0dp"
         android:paddingStart="0dp"
         android:adjustViewBounds="true"
-        android:layout_alignParentTop="true"
         android:layout_alignParentStart="true"
         android:cropToPadding="false" />
 
@@ -93,5 +91,26 @@
         android:textSize="20sp"
         android:layout_below="@+id/textViewAppName"
         android:layout_centerHorizontal="true" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/buttonResume"
+        android:layout_toStartOf="@+id/buttonResume"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="77dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <Space
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/buttonNew"
+        android:layout_toStartOf="@+id/buttonNew"
+        android:layout_marginEnd="35dp" />
 
 </RelativeLayout>
