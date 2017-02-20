@@ -1,8 +1,13 @@
 package com.wpwiii.movement2contact;
 
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.wpwiii.movement2contact.Prefs;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,6 +34,9 @@ import android.content.DialogInterface;
 import java.io.FileOutputStream;
 import java.io.FileInputStream;
 import android.content.Context;
+import android.widget.Scroller;
+import android.text.method.ScrollingMovementMethod;
+import android.view.Gravity;
 
 class Utils {
 
@@ -217,18 +225,17 @@ public class GameActivity extends AppCompatActivity {
     MapAdapter _mapAdapter = new MapAdapter(this);
     private static final String TAG = "GameActivity";
     private static final String SAVEGAMEFILENAME = "savegame.dat";
+    private static final String SAVELOGFILENAME = "savelog.dat";
     public static final int MAX_ROWS = 15;
     public static final int MAX_COLS = 10;
     public static final int MAX_ARRAY = 150;
     public static final int MAX_TURNS = 20;
     public static final int GAME_OVER_WIN = 1;
     public static final int GAME_OVER_LOSE = 0;
-    Integer[] _mapArray = new Integer[MAX_ARRAY];
     TextView _turnText;
     TextView _actionText;
     String _actionString = "";
     String _turnString = "";
-    Intent _myIntent = getIntent();
     MapSquare[] _mapSquares;
     Integer[] _imageIds = new Integer[MAX_ARRAY];
     Unit _activeUnit = null;
@@ -242,6 +249,12 @@ public class GameActivity extends AppCompatActivity {
     int _enemyUnitCount = 0;
     boolean _persistGame = true;
     boolean _enemyTurn = false;
+    private String _gameLog = "";
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
 
     // ===========================
     // calculateScore
@@ -274,11 +287,9 @@ public class GameActivity extends AppCompatActivity {
         // now, take score to generate stars
         if (score >= 10) {
             stars = 3;
-        }
-        else if ((score < 10) && (score > 5)) {
+        } else if ((score < 10) && (score > 5)) {
             stars = 2;
-        }
-        else {
+        } else {
             stars = 1;
         }
 
@@ -291,7 +302,7 @@ public class GameActivity extends AppCompatActivity {
     // ==========================
     void deselectUnit(int pos) {
         ImageView v = (ImageView) _mapAdapter.getItem(pos);
-        v.setPadding(2,2,2,2);
+        v.setPadding(2, 2, 2, 2);
         v.setBackgroundColor(Color.BLACK);
     }
 
@@ -303,21 +314,21 @@ public class GameActivity extends AppCompatActivity {
 
         Log.d(TAG, "Enter doAttack");
 
-        Unit redUnit = toSq.getUnit();
+        final Unit redUnit = toSq.getUnit();
         Unit blueUnit = fromSq.getUnit();
         ImageView v = null;
-        int pos = 0;
-        int icon = 0;
-        int attackNum = 0;
-        int roll = 0;
+        int pos;
+        int icon;
+        int attackNum;
+        int roll;
         int damage = 0;
         String attackMsg = "";
         int secs = 2;
-        int img = 0;
+        int img;
         boolean isHit = false;
         boolean isSuppressed = false;
         boolean isNoLongerCombatEffective = false;
-        int s = 0;
+        int s;
 
         // if blue unit already attacked this turn, pop out
         if (blueUnit.getHasAttacked()) {
@@ -419,30 +430,6 @@ public class GameActivity extends AppCompatActivity {
             }
         }
 
-        // if combat effectiveness now black, just get rid of it
-        if ((redUnit != null) && (redUnit.getEff() == Unit.EFF_BLACK)) {
-            img = toSq.getTerrainType();
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
-            isNoLongerCombatEffective = true;
-            toSq.setUnit(null);
-            _mapSquares[pos] = toSq;
-            secs = 1;
-            deselectUnit(unitPos);
-            // reduce number of enemy units by one
-            _enemyUnitCount--;
-            Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
-        } else {
-            Utils.delay(secs, new Utils.DelayCallback() {
-                @Override
-                public void afterDelay() {
-                    deselectUnit(unitPos);
-
-                }
-            });
-        }
-
-
         // issue 34 - if player attacking enemy, tell less info
         if (blueUnit.getOwner() == Unit.OWNER_PLAYER) {
             // next, see if unit was there
@@ -462,14 +449,44 @@ public class GameActivity extends AppCompatActivity {
             } else if (isNoLongerCombatEffective) {
                 // destroyed
                 attackMsg = String.format(getString(R.string.attackmsg_killed), redUnit.getName());
-            }
-            else {
+            } else {
                 // not even hit or hit but no damage, so same message
                 attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
             }
         }
 
+        // display attak message, but also log it
+        _gameLog += "- " + attackMsg + "\r\n";
         _actionText.setText(attackMsg);
+
+        // if combat effectiveness now black, just get rid of it
+        if ((redUnit != null) && (redUnit.getEff() == Unit.EFF_BLACK)) {
+            img = toSq.getTerrainType();
+            v.setImageResource(img);
+            _mapAdapter.setItem(v, img, pos);
+            isNoLongerCombatEffective = true;
+            toSq.setUnit(null);
+            _mapSquares[pos] = toSq;
+            deselectUnit(unitPos);
+            // reduce number of enemy units by one
+            _enemyUnitCount--;
+            Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
+            _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
+            _actionText.setText(redUnit.getName() + "was destroyed");
+        } else {
+            Utils.delay(secs, new Utils.DelayCallback() {
+                @Override
+                public void afterDelay() {
+                    deselectUnit(unitPos);
+                    // if we killed an enemy unit, tell player
+                    if ((redUnit.getOwner() == Unit.OWNER_OPFOR) && (redUnit.getEff() == Unit.EFF_BLACK)) {
+                        _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
+                        _actionText.setText(redUnit.getName() + "was destroyed");
+                    }
+                }
+            });
+        }
+
 
         // are there any enemy units left?
         if (_enemyUnitCount == 0) {
@@ -491,7 +508,7 @@ public class GameActivity extends AppCompatActivity {
         Unit u = null;
         int owner = Unit.OWNER_PLAYER;
         int icon = 0;
-        ImageView imgClicked =  (ImageView) v;
+        ImageView imgClicked = (ImageView) v;
 
         // issue #2
         // if we're in middle of enemy turn, don't handle clicks
@@ -503,7 +520,7 @@ public class GameActivity extends AppCompatActivity {
         ms = _mapSquares[position];
         u = ms.getUnit();
 
-        // #1 if active square, quick check to see if we selected same one
+        // if active square, quick check to see if we selected same one
         if ((_activeSq != null) && (_activeSq == ms)) {
             deselectUnit(position);
             _actionText.setText("");
@@ -512,7 +529,16 @@ public class GameActivity extends AppCompatActivity {
             return;
         }
 
-        // #2 if no active unit, the current one is now active (assuming player owns it)
+        // if there's an active unit and the one we selected is not combat effective, need to check for that
+        if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (u.getEff() == Unit.EFF_BLACK)) {
+            _actionText.setText(String.format(getString(R.string.combat_ineffective), u.getName()));
+            _activeUnit = null;
+            _activeSq = null;
+            deselectUnit(position);
+            return;
+        }
+
+        // if no active unit, the current one is now active (assuming player owns it)
         if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
             _activeUnit = u;
             _activeSq = ms;
@@ -526,14 +552,13 @@ public class GameActivity extends AppCompatActivity {
             }
             if (_activeUnit.getHasAttacked()) {
                 _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-            }
-            else {
+            } else {
                 _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
             }
             return;
         }
 
-        // #3 if we have active square and unit, did they select on adjacent map square?
+        // if we have active square and unit, did they select on adjacent map square?
         if (isAdjacent(_activeSq, ms)) {
             // yes, adjacent
             // (a) if friendly there, switch to that unit
@@ -547,8 +572,7 @@ public class GameActivity extends AppCompatActivity {
                 selectUnit(position, Color.BLUE);
                 if (_activeUnit.getHasAttacked()) {
                     _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                }
-                else {
+                } else {
                     _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                 }
                 _activeUnit = u;
@@ -566,8 +590,7 @@ public class GameActivity extends AppCompatActivity {
                     _activeUnit = ms.getUnit();
                     if (_activeUnit.getHasAttacked()) {
                         _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                    }
-                    else {
+                    } else {
                         _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                     }
                 }
@@ -592,16 +615,14 @@ public class GameActivity extends AppCompatActivity {
                 }
                 if (!_activeUnit.getHasAttacked()) {
                     doAttack(_activeSq, ms);
-                }
-                else {
+                } else {
                     _actionText.setText(String.format(getString(R.string.already_attacked), _activeUnit.getName()));
                 }
             }
 
             // (d) otherwise, ignore
 
-        }
-        else {
+        } else {
             // not adjacent
             // (a) if friendly, switch focus
             if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
@@ -611,8 +632,7 @@ public class GameActivity extends AppCompatActivity {
                 _activeSq = ms;
                 if (_activeUnit.getHasAttacked()) {
                     _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                }
-                else {
+                } else {
                     _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                 }
                 return;
@@ -623,12 +643,10 @@ public class GameActivity extends AppCompatActivity {
                 if (ms.getUnit().getIsVisible()) {
                     doAttack(_activeSq, ms);
                     return;
-                }
-                else {
+                } else {
                     if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
                         doAttack(_activeSq, ms);
-                    }
-                    else {
+                    } else {
                         // ignore
                     }
                 }
@@ -638,7 +656,7 @@ public class GameActivity extends AppCompatActivity {
                 doAttack(_activeSq, ms);
             }
             // (d)
-            else if (_activeSq != null)  {
+            else if (_activeSq != null) {
                 _actionText.setText(R.string.out_of_range);
             }
 
@@ -732,13 +750,11 @@ public class GameActivity extends AppCompatActivity {
                     // snipers and mg can suppress, but if target unit is HQ unit or adjacent to HQ unit, no suppression occurs
                     if (blueUnit.getType() == Unit.TYPE_HQ) {
                         // no suppression
-                    }
-                    else {
+                    } else {
                         msHQ = getHQUnitMapSquare();
                         if (isAdjacent(toSq, msHQ)) {
                             // no suppression
-                        }
-                        else {
+                        } else {
                             blueUnit.setIsSuppressed(true);
                             blueUnit.setTurnSuppressed(_turn);
                             isSuppressed = true;
@@ -761,19 +777,19 @@ public class GameActivity extends AppCompatActivity {
 
 
         // decide on which message to use
-        if ((isHit) && (damage <=8) && (isSuppressed)) {
+        if ((isHit) && (damage <= 8) && (isSuppressed)) {
             // they were hit and suppressed
             attackMsg = String.format(getString(R.string.attackmsg_sup), blueUnit.getName());
-        }
-        else if ((isHit) && (damage <=8) && (!isSuppressed)) {
+        } else if ((isHit) && (damage <= 8) && (!isSuppressed)) {
             // they were hit but not suppressed
             attackMsg = String.format(getString(R.string.attackmsg_nosup), blueUnit.getName());
-        }
-        else {
+        } else {
             // not even hit or hit but no damage, so same message
             attackMsg = String.format(getString(R.string.attackmsg_miss), blueUnit.getName());
         }
 
+        //_gameLog += "- " + redUnit.getName() + " attacked " + blueUnit.getName() + "\r\n";
+        _gameLog += "- " + attackMsg + "\r\n";
         // update label
         _actionText.setText(attackMsg);
 
@@ -792,16 +808,16 @@ public class GameActivity extends AppCompatActivity {
 
         MapSquare ms = fromSq;
         MapSquare toSquare = null;
-        int pos = 0;
+        int pos;
         Unit u = fromSq.getUnit();
         int row = ms.getRow();
         int col = ms.getCol();
-        int toRow = 0;
-        int toCol = 0;
+        int toRow;
+        int toCol;
         boolean isAbleToMove = false;
         int tries = 0;
         ImageView v = null;
-        int img = 0;
+        int img;
 
         // outer loop
         while ((!isAbleToMove) && (tries <= 3)) {
@@ -873,15 +889,13 @@ public class GameActivity extends AppCompatActivity {
                 }
                 // set flag so we pop out of loop
                 isAbleToMove = true;
-            }
-            else {
+            } else {
                 // nope, something there so just increment the tries
                 tries++;
             }
 
 
         }
-
 
 
     }
@@ -1036,8 +1050,7 @@ public class GameActivity extends AppCompatActivity {
                 //Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
                 if (result <= 2) {
                     stayVisible = true;
-                }
-                else {
+                } else {
                     stayVisible = false;
                 }
 
@@ -1061,8 +1074,7 @@ public class GameActivity extends AppCompatActivity {
                             stayVisible = true;
                             redUnit.setIsVisible(true);
                             break;
-                        }
-                        else {
+                        } else {
                             stayVisible = false;
                             redUnit.setIsVisible(false);
                         }
@@ -1080,8 +1092,7 @@ public class GameActivity extends AppCompatActivity {
                         img = fromSq.getTerrainType();
                         v.setImageResource(img);
                         _mapAdapter.setItem(v, img, ctr);
-                    }
-                    else {
+                    } else {
                         Log.d(TAG, "ImageView was null ... redUnit " + redUnit.getName() + " at " + Integer.toString(row) + ", " + Integer.toString(col));
                     }
                 }
@@ -1122,8 +1133,7 @@ public class GameActivity extends AppCompatActivity {
         if (_turn == MAX_TURNS) {
             // yes, we're the max turn before incrementing so next turn would push us over ... game over man, game over
             gameOver = true;
-        }
-        else {
+        } else {
             // #2 loop through all player units and if all are at eff black, then done
             gameOver = true;
             for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
@@ -1161,11 +1171,10 @@ public class GameActivity extends AppCompatActivity {
                         img = getUnitIcon(u);
                         v.setImageResource(img);
                         _mapAdapter.setItem(v, img, pos);
-                    }
-                    else {
+                    } else {
                         // code here to see if hq unit adjacent to suppressed unit; if it is, remove the suppression right away (if a player unit)
                         msHQ = getHQUnitMapSquare();
-                        if ((isAdjacent(msHQ, ms) && (u.getOwner() == Unit.OWNER_PLAYER)) ) {
+                        if ((isAdjacent(msHQ, ms) && (u.getOwner() == Unit.OWNER_PLAYER))) {
                             u.setIsSuppressed(false);
                             // if no longer suppressed, need to flip icon back
                             pos = getArrayPosforRowCol(ms.getRow(), ms.getCol());
@@ -1205,16 +1214,17 @@ public class GameActivity extends AppCompatActivity {
 
         // increment turn counter
         _turn++;
-        _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
+        _turnString = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _turnText.setText(_turnString);
 
-
-        // save all the game data
-
-
+        // add to game log
+        if (_turn > 1) {
+            _gameLog += "\r\n";
+        }
+        _gameLog += "Turn " + _turn + ":\r\n";
+        _gameLog += "=======================\r\n";
 
         Log.d(TAG, "Exit doEndTurn");
-
 
 
     }
@@ -1249,7 +1259,7 @@ public class GameActivity extends AppCompatActivity {
 
             // get imageview for current square and remove the unit
             v = (ImageView) _mapAdapter.getItem(posFrom);
-            v.setPadding(2,2,2,2);
+            v.setPadding(2, 2, 2, 2);
             v.setBackgroundColor(Color.BLACK);
             img = ms.getTerrainType();
             v.setImageResource(img);
@@ -1263,7 +1273,7 @@ public class GameActivity extends AppCompatActivity {
 
             // re-draw icon in new spot
             v = (ImageView) _mapAdapter.getItem(posTo);
-            v.setPadding(5,5,5,5);
+            v.setPadding(5, 5, 5, 5);
             v.setBackgroundColor(Color.BLUE);
             img = getUnitIcon(u);
             v.setImageResource(img);
@@ -1273,11 +1283,14 @@ public class GameActivity extends AppCompatActivity {
             _activeUnit = u;
             _activeSq = _mapSquares[posTo];
 
+            // add to log
+            _gameLog += "- " + u.getName() + " moved to " + _mapSquares[posTo].getRow() + ", " + _mapSquares[posTo].getCol() + "\r\n";
+
+
             // we did a move
             return true;
 
-        }
-        else {
+        } else {
             // no move occured
             return false;
         }
@@ -1285,13 +1298,11 @@ public class GameActivity extends AppCompatActivity {
     }
 
 
-
-
     // ===========================
     // getArrayPosforRowCol
     // ===========================
     int getArrayPosforRowCol(int row, int col) {
-        int pos = 0;
+        int pos;
         for (pos = 0; pos < MAX_ARRAY; pos++) {
             if ((_mapSquares[pos].getRow() == row) && (_mapSquares[pos].getCol() == col)) {
                 break;
@@ -1329,9 +1340,9 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     MapSquare getHQUnitMapSquare() {
 
-        int pos = 0;
+        int pos;
         MapSquare ms = null;
-        Unit u = null;
+        Unit u;
 
         for (pos = 0; pos < MAX_ARRAY; pos++) {
             ms = _mapSquares[pos];
@@ -1494,8 +1505,6 @@ public class GameActivity extends AppCompatActivity {
     }
 
 
-
-
     // ===========================
     // IsMapSpotTaken
     // ===========================
@@ -1533,13 +1542,10 @@ public class GameActivity extends AppCompatActivity {
                 moveRequired = 3;
         }
 
-        Log.d(TAG, "Exit isAbleToMoveInto. u.getRemainingMove() = " + Integer.toString(u.getRemainingMove())+ ", moveRequired = " + Integer.toString(moveRequired));
+        Log.d(TAG, "Exit isAbleToMoveInto. u.getRemainingMove() = " + Integer.toString(u.getRemainingMove()) + ", moveRequired = " + Integer.toString(moveRequired));
         return (u.getRemainingMove() >= moveRequired);
 
     }
-
-
-
 
 
     // ==========================
@@ -1611,7 +1617,8 @@ public class GameActivity extends AppCompatActivity {
             if (col > MAX_COLS) {
                 col = 1;
                 row++;
-            };
+            }
+            ;
             // randomly assign a terrain type
             terrainType = randomizeTerrain();
             ms.setTerrainType(terrainType);
@@ -1621,6 +1628,11 @@ public class GameActivity extends AppCompatActivity {
             _mapSquares[ctr] = ms;
 
         }
+
+        // flush the game log text
+        _gameLog = "";
+        _gameLog += "Turn " + _turn + ":\r\n";
+        _gameLog += "=======================\r\n";
 
         // next, manually set friendly and enemy units
         setUpFriendlyUnits();
@@ -1642,7 +1654,7 @@ public class GameActivity extends AppCompatActivity {
         dialog.show();
 
         // set the initial turn text
-        _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
+        _turnString = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _actionString = "";
 
     }
@@ -1677,6 +1689,7 @@ public class GameActivity extends AppCompatActivity {
         _mpMortar = MediaPlayer.create(this, R.raw.mortar);
         _mpSniper = MediaPlayer.create(this, R.raw.sniper);
         String newGame = "true";
+        TextView tv = null;
 
         // get the custom font
         Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
@@ -1691,7 +1704,7 @@ public class GameActivity extends AppCompatActivity {
             public boolean onTouch(View v, MotionEvent event) {
 
                 Button btn = (Button) findViewById(R.id.button1);
-                if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
                 } else if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -1743,10 +1756,42 @@ public class GameActivity extends AppCompatActivity {
             }
         });
 
+        // set long press on the messages area
+        tv = (TextView) findViewById(R.id.textView8);
+
+        // set the long press
+        tv.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+
+                AlertDialog dialog = new AlertDialog.Builder(GameActivity.this, R.style.MyAlertDialogStyle)
+                        .setTitle(getString(R.string.game_log))
+                        .setMessage(_gameLog)
+                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+
+                TextView textView = (TextView) dialog.findViewById(android.R.id.message);
+                textView.setTextSize(12);
+                textView.setMaxLines(5);
+                textView.setScroller(new Scroller(GameActivity.this));
+                textView.setVerticalScrollBarEnabled(true);
+                textView.setMovementMethod(new ScrollingMovementMethod());
+                //textView.scrollTo(0, textView.getLineHeight() * textView.getLineCount());
+                textView.setGravity(Gravity.LEFT | Gravity.BOTTOM);
+
+                return true;
+
+            }
+        });
+
         // new game?
         if (savedInstanceState == null) {
             Bundle extras = getIntent().getExtras();
-            if(extras == null) {
+            if (extras == null) {
                 newGame = "true";
             } else {
                 newGame = extras.getString("NEW_GAME");
@@ -1761,8 +1806,7 @@ public class GameActivity extends AppCompatActivity {
             } else {
                 resumeGame();
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             newGame();
             Log.e(TAG, e.getMessage());
         }
@@ -1777,6 +1821,9 @@ public class GameActivity extends AppCompatActivity {
         _actionText.setText(_actionString);
 
 
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
 
@@ -1833,8 +1880,7 @@ public class GameActivity extends AppCompatActivity {
             if (u == null) {
                 // put a -1 where there' be a unit so we don't try to instantiate one later
                 csv.append(",-1");
-            }
-            else {
+            } else {
                 // unit name
                 // unit type
                 // unit size
@@ -1850,8 +1896,8 @@ public class GameActivity extends AppCompatActivity {
                 // unit maxmove
                 // unit remaining move
                 csv.append("," + u.getName() + "," + u.getType() + "," + u.getSize() + "," + u.getOwner() + "," + u.getIsVisible() + "," + u.getIsSuppressed() + "," + u.getTurnSuppressed() +
-                    "," + u.getHasAttacked() + "," + u.getAttackRange() + "," + u.getAttackNumber() + "," + u.getAggression() + "," + u.getEff() +
-                    "," + u.getMaxMove() + "," + u.getRemainingMove());
+                        "," + u.getHasAttacked() + "," + u.getAttackRange() + "," + u.getAttackNumber() + "," + u.getAggression() + "," + u.getEff() +
+                        "," + u.getMaxMove() + "," + u.getRemainingMove());
 
             }
             csv.append("\r\n");
@@ -1862,11 +1908,22 @@ public class GameActivity extends AppCompatActivity {
             FileOutputStream fos = openFileOutput(SAVEGAMEFILENAME, Context.MODE_PRIVATE);
             fos.write(csv.toString().getBytes("UTF-8"));
             fos.close();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // raise an error
             Log.e(TAG, e.getMessage());
         }
+
+        // next, persist the game log
+        try {
+            FileOutputStream fos = openFileOutput(SAVELOGFILENAME, Context.MODE_PRIVATE);
+            fos.write(_gameLog.getBytes("UTF-8"));
+            fos.close();
+        } catch (Exception e) {
+            // raise an error
+            Log.e(TAG, e.getMessage());
+        }
+
+
 
     }
 
@@ -1939,8 +1996,7 @@ public class GameActivity extends AppCompatActivity {
                     }
             }
 
-        }
-        else {
+        } else {
             Log.d(TAG, "No sound played due to preference setting");
         }
 
@@ -2005,7 +2061,6 @@ public class GameActivity extends AppCompatActivity {
             FileInputStream fis = openFileInput(SAVEGAMEFILENAME);
             InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
             BufferedReader br = new BufferedReader(isr);
-            StringBuilder sb = new StringBuilder();
             // first line is game turn
             line = br.readLine();
             _turn = Integer.parseInt(line);
@@ -2035,8 +2090,7 @@ public class GameActivity extends AppCompatActivity {
                 if (unitName.equalsIgnoreCase("-1")) {
                     // no unit in this square, so just add null one to the array
                     ms.setUnit(null);
-                }
-                else {
+                } else {
                     // yes, unit there so create it
                     unit = new Unit(vals[3], Integer.parseInt(vals[4]), Integer.parseInt(vals[5]), Integer.parseInt(vals[6]),
                             Integer.parseInt(vals[11]), Integer.parseInt(vals[12]), Integer.parseInt(vals[15]));
@@ -2066,14 +2120,27 @@ public class GameActivity extends AppCompatActivity {
             }
 
 
-
-
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
 
+        // load up game log
+        try {
+            FileInputStream fis = openFileInput(SAVELOGFILENAME);
+            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            BufferedReader br = new BufferedReader(isr);
+            while ((line = br.readLine()) != null) {
+                _gameLog += line;
+            }
+
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+
+
         // set the initial turn text
-        _turnString  = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
+        _turnString = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _actionString = "";
 
 
@@ -2097,7 +2164,7 @@ public class GameActivity extends AppCompatActivity {
 
         try {
             while ((line = reader.readLine()) != null) {
-                String [] items = line.split(",");
+                String[] items = line.split(",");
                 // create a unit class
                 unit = new Unit(items[0], Integer.parseInt(items[2]), Integer.parseInt(items[3]), Integer.parseInt(items[1]),
                         Integer.parseInt(items[4]), Integer.parseInt(items[5]), Integer.parseInt(items[6]));
@@ -2110,21 +2177,13 @@ public class GameActivity extends AppCompatActivity {
 
             }
             reader.close();
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             // do nothing
             Log.e(TAG, ioe.getMessage());
         }
 
 
     }
-
-
-
-
-
-
-
 
 
     // ===========================
@@ -2139,9 +2198,7 @@ public class GameActivity extends AppCompatActivity {
                 getResources().getIdentifier("opfor",
                         "raw", getPackageName()));
         BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
-        StringBuilder out = new StringBuilder();
         String line;
-        String item;
         Unit unit;
         int pos = 0;
         int rifleSquads = 0;
@@ -2169,7 +2226,7 @@ public class GameActivity extends AppCompatActivity {
 
         try {
             while ((line = reader.readLine()) != null) {
-                String [] items = line.split(",");
+                String[] items = line.split(",");
 
                 // store all the fields so we can use later
                 name = items[0];
@@ -2235,8 +2292,7 @@ public class GameActivity extends AppCompatActivity {
 
             }
             reader.close();
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             // do nothing
             Log.e(TAG, ioe.getMessage());
         }
@@ -2254,7 +2310,7 @@ public class GameActivity extends AppCompatActivity {
     // ==========================
     void selectUnit(int pos, int color) {
         ImageView v = (ImageView) _mapAdapter.getItem(pos);
-        v.setPadding(5,5,5,5);
+        v.setPadding(5, 5, 5, 5);
         v.setBackgroundColor(color);
     }
 
@@ -2294,8 +2350,7 @@ public class GameActivity extends AppCompatActivity {
                         break;
                 }
             }
-        }
-        else if ((u != null) && (u.getOwner() == Unit.OWNER_OPFOR) && (u.getIsVisible())) {
+        } else if ((u != null) && (u.getOwner() == Unit.OWNER_OPFOR) && (u.getIsVisible())) {
             icon = getUnitIcon(u);
             title = u.getName();
             switch (u.getType()) {
@@ -2310,8 +2365,7 @@ public class GameActivity extends AppCompatActivity {
                     break;
 
             }
-        }
-        else {
+        } else {
             icon = getTerrainImage(ms);
             switch (icon) {
                 case R.drawable.rocky:
@@ -2343,7 +2397,6 @@ public class GameActivity extends AppCompatActivity {
         dialog.show();
 
 
-
     }
 
     // ===========================
@@ -2358,8 +2411,7 @@ public class GameActivity extends AppCompatActivity {
         if (message == GAME_OVER_LOSE) {
             title = R.string.game_over_lose_title;
             body = getString(R.string.game_over_lose_body);
-        }
-        else {
+        } else {
             title = R.string.game_over_win_title;
             // they won the game, so also figure out the score
             body = String.format(getString(R.string.game_over_win_body), calculateStars());
@@ -2368,8 +2420,7 @@ public class GameActivity extends AppCompatActivity {
         // delete any saved game data
         try {
             deleteFile(SAVEGAMEFILENAME);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
 
@@ -2392,4 +2443,39 @@ public class GameActivity extends AppCompatActivity {
     }
 
 
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("Game Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+        client.disconnect();
+    }
 }
