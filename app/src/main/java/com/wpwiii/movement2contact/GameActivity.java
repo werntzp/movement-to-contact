@@ -479,9 +479,14 @@ public class GameActivity extends AppCompatActivity {
                 public void afterDelay() {
                     deselectUnit(unitPos);
                     // if we killed an enemy unit, tell player
-                    if ((redUnit.getOwner() == Unit.OWNER_OPFOR) && (redUnit.getEff() == Unit.EFF_BLACK)) {
-                        _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
-                        _actionText.setText(redUnit.getName() + "was destroyed");
+                    try {
+                        if ((redUnit.getOwner() == Unit.OWNER_OPFOR) && (redUnit.getEff() == Unit.EFF_BLACK)) {
+                            _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
+                            _actionText.setText(redUnit.getName() + "was destroyed");
+                        }
+                    }
+                    catch (Exception e) {
+                        Log.e(TAG, e.getMessage());
                     }
                 }
             });
@@ -1972,32 +1977,39 @@ public class GameActivity extends AppCompatActivity {
 
         Log.d(TAG, "Enter getSound");
 
-        // only play sound if set in preferences dialog
-        if (Prefs.getValue(this, Prefs.KEY_SOUND) == 1) {
+        try {
 
-            switch (u.getType()) {
-                case Unit.TYPE_HQ:
-                    _mpInfSquad.start();
-                    break;
-                case Unit.TYPE_MG:
-                    _mpMG.start();
-                    break;
-                case Unit.TYPE_MORTAR:
-                    _mpMortar.start();
-                    break;
-                case Unit.TYPE_SNIPER:
-                    _mpSniper.start();
-                    break;
-                default:
-                    if (u.getSize() == Unit.SIZE_PLATOON) {
-                        _mpInfPlatoon.start();
-                    } else {
+            // only play sound if set in preferences dialog
+            if (Prefs.getValue(this, Prefs.KEY_SOUND) == 1) {
+
+                switch (u.getType()) {
+                    case Unit.TYPE_HQ:
                         _mpInfSquad.start();
-                    }
+                        break;
+                    case Unit.TYPE_MG:
+                        _mpMG.start();
+                        break;
+                    case Unit.TYPE_MORTAR:
+                        _mpMortar.start();
+                        break;
+                    case Unit.TYPE_SNIPER:
+                        _mpSniper.start();
+                        break;
+                    default:
+                        if (u.getSize() == Unit.SIZE_PLATOON) {
+                            _mpInfPlatoon.start();
+                        } else {
+                            _mpInfSquad.start();
+                        }
+                }
+
+            } else {
+                Log.d(TAG, "No sound played due to preference setting");
             }
 
-        } else {
-            Log.d(TAG, "No sound played due to preference setting");
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getMessage());
         }
 
         Log.d(TAG, "Exit getSound");
