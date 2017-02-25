@@ -833,13 +833,13 @@ public class GameActivity extends AppCompatActivity {
 
             // based on aggression factor, enemy units move towards top of map, side to side or retreat backwards
             switch (u.getAggression()) {
-                case 3:
+                case Unit.AGG_VERY:
                     // subtract 1 from current row
                     toRow--;
                     // get random number, subtract -1 and then add that to column
                     toCol = toCol + (getRandomNumber(2, 0) - 1);
                     break;
-                case 2:
+                case Unit.AGG_SOME:
                     // column can go left or right, so pick 0 or 1
                     toCol = getRandomNumber(1, 0);
                     if (toCol == 0) {
@@ -848,8 +848,8 @@ public class GameActivity extends AppCompatActivity {
                         toCol = col + 1;
                     }
                     break;
-                case 1:
-                    // subtract 1 from current row
+                case Unit.AGG_NO:
+                    // add 1 to current row
                     toRow++;
                     // get random number, subtract -1 and then add that to column
                     toCol = toCol + (getRandomNumber(2, 0) - 1);
@@ -859,8 +859,9 @@ public class GameActivity extends AppCompatActivity {
             if (toRow > MAX_ROWS) {
                 toRow = MAX_ROWS;
             }
-            if (toRow < 0) {
-                toRow = 0;
+            // don't let opfor move beyond where player started so they aren't chasing them all over the map
+            if (toRow < 7) {
+                toRow = 7;
             }
             if (toCol > MAX_COLS) {
                 toCol = MAX_COLS;
@@ -1947,7 +1948,7 @@ public class GameActivity extends AppCompatActivity {
         while (true) {
             // generate random row and col
             col = getRandomNumber(MAX_COLS, 1);
-            row = getRandomNumber(MAX_ROWS, 8);
+            row = getRandomNumber(MAX_ROWS-2, 7);
             if (!isMapSpotTaken(row, col)) {
                 // found an empty spot, so break out of loop
                 break;
@@ -2255,9 +2256,9 @@ public class GameActivity extends AppCompatActivity {
                 switch (a) {
                     case 1:
                     case 2:
-                    case 3:
                         aggression = Unit.AGG_NO;
                         break;
+                    case 3:
                     case 4:
                     case 5:
                     case 6:
