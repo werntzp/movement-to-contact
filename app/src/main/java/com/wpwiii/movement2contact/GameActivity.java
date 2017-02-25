@@ -1051,15 +1051,6 @@ public class GameActivity extends AppCompatActivity {
 
                 Log.d(TAG, "Checking for redUnit " + redUnit.getName() + " at " + Integer.toString(row) + ", " + Integer.toString(col));
 
-                // first, randomly figure out if they should stay visible (2 in 10 chance)
-                result = getRandomNumber(10, 1);
-                //Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
-                if (result <= 2) {
-                    stayVisible = true;
-                } else {
-                    stayVisible = false;
-                }
-
                 for (int x = 0; x < MAX_ARRAY; x++) {
                     toSq = _mapSquares[x];
                     blueUnit = toSq.getUnit();
@@ -1082,7 +1073,18 @@ public class GameActivity extends AppCompatActivity {
                             break;
                         } else {
                             stayVisible = false;
-                            redUnit.setIsVisible(false);
+                            // next, even if should be invisible, randomly figure out if they should stay visible (4 in 10 chance)
+                            result = getRandomNumber(10, 1);
+                            Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
+                            if ((!stayVisible) && (result <= 4)) {
+                                stayVisible = true;
+                                redUnit.setIsVisible(true);
+                            } else {
+                                stayVisible = false;
+                                redUnit.setIsVisible(false);
+                            }
+
+
                         }
 
 
@@ -1229,6 +1231,12 @@ public class GameActivity extends AppCompatActivity {
         }
         _gameLog += "Turn " + _turn + ":\r\n";
         _gameLog += "=======================\r\n";
+
+
+        // extra check in case they avoid dialog and game didn't end
+        if (gameOver == true) {
+            finish();
+        }
 
         Log.d(TAG, "Exit doEndTurn");
 
