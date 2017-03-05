@@ -7,7 +7,7 @@
     <string name="player_attackmsg">%1$s attacked %2$s</string>
     <string name="attackmsg_nosup">%1$s took casualties</string>
     <string name="attackmsg_sup">%1$s took casualties and is suppressed</string>
-    <string name="attackmsg_miss">%1$s was attacked, but took no no casualties</string>
+    <string name="attackmsg_miss">%1$s was attacked, but took no casualties</string>
     <string name="attackmsg_killed">%1$s is no longer combat effective</string>
     <string name="attackmsg_nounit">No emey unit detected</string>
     <string name="turn">Movement To Contact - Turn %1$s (%2$s)</string>

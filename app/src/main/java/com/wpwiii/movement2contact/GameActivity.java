@@ -250,6 +250,8 @@ public class GameActivity extends AppCompatActivity {
     boolean _persistGame = true;
     boolean _enemyTurn = false;
     private String _gameLog = "";
+    MapSquare _ms = null;
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -658,7 +660,38 @@ public class GameActivity extends AppCompatActivity {
             }
             // (c) we have a mortar firing into an empty space, which is still legal
             if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
-                doAttack(_activeSq, ms);
+                // issue #42 - if picking empty square, pop up dialog to be on safe side
+                int it = getArrayPosforRowCol(ms.getRow(), ms.getCol());
+                Unit ut = _mapSquares[it].getUnit();
+                if ((ut == null) || (!ut.getIsVisible())) {
+                    // store the map square
+                    _ms = ms;
+
+                    // onlick listener
+                    DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            switch (which){
+                                case DialogInterface.BUTTON_POSITIVE:
+                                    //Yes button clicked
+                                    doAttack(_activeSq, _ms);
+
+                                case DialogInterface.BUTTON_NEGATIVE:
+                                    //No button clicked
+                                    break;
+                            }
+                        }
+                    };
+
+                    // throw up yes/no dialog
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+                    builder.setMessage("Fire mortars into this map square?").setPositiveButton("Yes", dialogClickListener)
+                            .setNegativeButton("No", dialogClickListener).show();
+
+                }
+                else {
+                    doAttack(_activeSq, ms);
+                }
             }
             // (d)
             else if (_activeSq != null) {
