@@ -1960,6 +1960,7 @@ public class GameActivity extends AppCompatActivity {
             Log.e(TAG, e.getMessage());
         }
 
+
         // next, persist the game log
         try {
             FileOutputStream fos = openFileOutput(SAVELOGFILENAME, Context.MODE_PRIVATE);
@@ -2184,7 +2185,8 @@ public class GameActivity extends AppCompatActivity {
             InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
             BufferedReader br = new BufferedReader(isr);
             while ((line = br.readLine()) != null) {
-                _gameLog += line;
+                // issue #43 - game log loses hard returns, so add them in there before dropping into game log
+                _gameLog += line + "\r\n";
             }
 
         }
