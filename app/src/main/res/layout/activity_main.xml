@@ -48,13 +48,21 @@
         android:layout_alignParentStart="true" />
 
     <ImageView
+        android:id="@+id/imageViewLogo"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_alignTop="@+id/imageViewSound"
+        android:layout_marginStart="-40dp"
+        app:srcCompat="@drawable/sds_logo" />
+
+    <ImageView
+        android:id="@+id/imageViewSound"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:srcCompat="@drawable/sound_transparent"
-        android:id="@+id/imageViewSound"
         android:layout_alignParentStart="true"
+        android:layout_marginStart="325dp"
         android:layout_marginTop="618dp"
-        android:layout_marginStart="325dp"/>
+        app:srcCompat="@drawable/sound_transparent" />
 
     <ImageView
         android:layout_width="wrap_content"
@@ -98,7 +106,8 @@
         android:layout_below="@+id/buttonResume"
         android:layout_toStartOf="@+id/buttonResume"
         android:layout_marginEnd="24dp"
-        android:layout_marginTop="77dp">
+        android:layout_marginTop="77dp"
+        android:id="@+id/scrollView2">
 
         <LinearLayout
             android:layout_width="match_parent"

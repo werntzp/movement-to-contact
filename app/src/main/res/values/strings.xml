@@ -26,12 +26,12 @@
     <string name="already_attacked">%1$s (already attacked this turn)</string>
     <string name="out_of_range">Cannot move or attack here</string>
     <string name="opfor_infantry">Enemy infantry squads are not as strong as your platoons, but can easily disappear back into the terrain when you are not adjacent to them.</string>
-    <string name="opfor_mg">An enemy machine gun team that can attack two squares away.</string>
+    <string name="opfor_mg">An enemy machine gun team that can attack two squares away and has a chance to suppress your units.</string>
     <string name="opfor_sniper">Enemy sniper teams can pin down your units from a greater distance and cause them to be suppressed easily.</string>
     <string name="player_hq">A headquarters unit can remove suppression from any unit it is adjacent to at the end of the your turn. Plus, any enemy unit within two squares always remains visible. However, it doesn\'t pack much of an offensive punch.</string>\
-    <string name="player_infantry">The infantry platoon consists of several squads and a mixture of semi-automatic rifles and machine guns. Infantry platoons can only attaack adjacent enemy units.</string>
+    <string name="player_infantry">Infantry platoons consist of several squads with mixture of semi-automatic rifles and machine guns. They can only attack adjacent enemy units.</string>
     <string name="player_mg">The machine gun section provides the company with additional firepower and can attack enemy units two squares away.</string>
-    <string name="player_mortar">The mortar section provides an indirect attack capability up to five squares away. The mortar section can also conduct \"recon by fire\" by attacking into terrain to identify any potential enemy units hiding there.</string>
+    <string name="player_mortar">Mortars provides an indirect attack capability up to five squares away. The mortar section can also conduct \"recon by fire\" attacking into terrain to identify hidden enemy units.</string>
     <string name="new_game">New</string>
     <string name="resume_game">Resume</string>
     <string name="button_back">Back</string>
@@ -41,7 +41,7 @@
     <string name="game_over_lose_title">Mission Failed</string>
     <string name="game_over_lose_body">You did not clear this sector which will result in the failure of the battalion assault againt the enemy stronghold.</string>
     <string name="game_over_win_body">You successfully cleared this sector allowing the larger battalion attack to occur. Based on the number of turns it took and status of your company, you have earned %1$d out of 3 stars.</string>
-    <string name="opening_msg">Commander, you have 25 turns to clear this sector, otherwise the main battalion attack is at risk of failure. Intel is estimating %1$s enemy units in this area with a potential mix of automatic weapons, machine guns and maybe snipers. Good luck!</string>
+    <string name="opening_msg">You have 25 turns to clear this sector, otherwise the main battalion attack is at risk of failure. Intel is estimating %1$s enemy units in this area with a potential mix of automatic weapons, machine guns and maybe snipers. Good luck!</string>
     <string name="opening_msg_title">Your Mission</string>
     <string name="game_log">Game Turn Log</string>
 </resources>
