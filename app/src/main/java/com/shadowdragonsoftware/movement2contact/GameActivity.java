@@ -1,10 +1,10 @@
-package com.wpwiii.movement2contact;
+package com.shadowdragonsoftware.movement2contact;
 
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.wpwiii.movement2contact.Prefs;
+import com.shadowdragonsoftware.movement2contact.Prefs;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -216,7 +216,7 @@ class MapSquare {
         return _terrainType;
     }
 
-};
+}
 
 // main class
 public class GameActivity extends AppCompatActivity {
@@ -1665,7 +1665,6 @@ public class GameActivity extends AppCompatActivity {
                 col = 1;
                 row++;
             }
-            ;
             // randomly assign a terrain type
             terrainType = randomizeTerrain();
             ms.setTerrainType(terrainType);

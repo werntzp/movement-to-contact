@@ -1,4 +1,4 @@
-package com.wpwiii.movement2contact;
+package com.shadowdragonsoftware.movement2contact;
 
 import android.support.annotation.IntegerRes;
 import android.widget.BaseAdapter;
@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
 import android.graphics.Color;
-import com.wpwiii.movement2contact.R;
+import com.shadowdragonsoftware.movement2contact.R;
 import java.util.Random;
 import android.widget.AdapterView.OnItemClickListener;
 import android.util.Log;

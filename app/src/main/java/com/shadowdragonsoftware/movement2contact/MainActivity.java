@@ -1,6 +1,6 @@
-package com.wpwiii.movement2contact;
+package com.shadowdragonsoftware.movement2contact;
 
-import com.wpwiii.movement2contact.Prefs;
+import com.shadowdragonsoftware.movement2contact.Prefs;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Color;

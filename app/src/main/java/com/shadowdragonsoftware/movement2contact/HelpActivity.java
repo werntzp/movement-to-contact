@@ -1,4 +1,4 @@
-package com.wpwiii.movement2contact;
+package com.shadowdragonsoftware.movement2contact;
 
 import android.content.Intent;
 import android.graphics.Color;
