@@ -2492,6 +2492,13 @@ public class GameActivity extends AppCompatActivity {
                 finish();
             }
         });
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                // back to main menu
+                finish();
+            }
+        });
         AlertDialog dialog = builder.create();
         dialog.show();
 
