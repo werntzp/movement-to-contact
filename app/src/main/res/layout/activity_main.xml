@@ -100,21 +100,6 @@
         android:layout_below="@+id/textViewAppName"
         android:layout_centerHorizontal="true" />
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/buttonResume"
-        android:layout_toStartOf="@+id/buttonResume"
-        android:layout_marginEnd="24dp"
-        android:layout_marginTop="77dp"
-        android:id="@+id/scrollView2">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
-
     <Space
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

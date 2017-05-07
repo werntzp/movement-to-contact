@@ -9,7 +9,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.wpwiii.movement2contact.GameActivity"
+    tools:context="com.shadowdragonsoftware.movement2contact.GameActivity"
     android:padding="0dp">
 
     <LinearLayout
