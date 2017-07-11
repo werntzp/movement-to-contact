@@ -10,7 +10,7 @@
     <string name="attackmsg_miss">%1$s was attacked, but took no casualties</string>
     <string name="attackmsg_killed">%1$s is no longer combat effective</string>
     <string name="attackmsg_nounit">No emey unit detected</string>
-    <string name="turn">Movement To Contact - Turn %1$s (%2$s)</string>
+    <string name="turn">Turn %1$s (%2$s)</string>
     <string name="you">You</string>
     <string name="computer">Enemy</string>
     <string name="scrub_desc">Scrub is easy to move through but does not provide any cover.</string>
