@@ -360,6 +360,12 @@ public class GameActivity extends AppCompatActivity {
         // next, our unit has attacked, so set property
         blueUnit.setHasAttacked(true);
 
+        // issue #47 - rule change, after player unit attacks, no more movement that turn
+        // issue 34 - if player attacking enemy, tell less info
+        if (blueUnit.getOwner() == Unit.OWNER_PLAYER) {
+            blueUnit.setRemainingMove(0);
+        }
+
         // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
         attackNum = blueUnit.getAttackNumber();
         switch (toSq.getTerrainType()) {
@@ -493,7 +499,6 @@ public class GameActivity extends AppCompatActivity {
                 }
             });
         }
-
 
         // are there any enemy units left?
         if (_enemyUnitCount == 0) {
