@@ -664,10 +664,11 @@ public class GameActivity extends AppCompatActivity {
                 }
             }
             // (c) we have a mortar firing into an empty space, which is still legal
-            if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+            if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (!_activeUnit.getHasAttacked()) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
                 // issue #42 - if picking empty square, pop up dialog to be on safe side
                 int it = getArrayPosforRowCol(ms.getRow(), ms.getCol());
                 Unit ut = _mapSquares[it].getUnit();
+                // issue 51 - only do if mortar already hasn't attacked
                 if ((ut == null) || (!ut.getIsVisible())) {
                     // store the map square
                     _ms = ms;
@@ -690,7 +691,7 @@ public class GameActivity extends AppCompatActivity {
 
                     // throw up yes/no dialog
                     AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
-                    builder.setMessage("Fire mortars into this map square?").setPositiveButton("Yes", dialogClickListener)
+                    builder.setMessage(getString(R.string.fire_mortars)).setPositiveButton("Yes", dialogClickListener)
                             .setNegativeButton("No", dialogClickListener).show();
 
                 }
