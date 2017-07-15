@@ -331,6 +331,10 @@ public class GameActivity extends AppCompatActivity {
         boolean isSuppressed = false;
         boolean isNoLongerCombatEffective = false;
         int s;
+        int posSplash = 0;
+        Unit unitSplash;
+        int hitSplash = 0;
+        MapSquare mapSplash;
 
         // if blue unit already attacked this turn, pop out
         if (blueUnit.getHasAttacked()) {
@@ -432,9 +436,62 @@ public class GameActivity extends AppCompatActivity {
                         redUnit.setTurnSuppressed(_turn);
                         Log.d(TAG, redUnit.getName() + " is suppressed");
                         isSuppressed = true;
+
                 }
                 // update array
                 _mapSquares[pos].setUnit(redUnit);
+            }
+        }
+
+        // issue 49 - if a mortar attack, 10% chance it also does damage to units in surrounding squares
+        // walk around the attacked square
+        if (blueUnit.getType() == Unit.TYPE_MORTAR) {
+            for (int r = -1; r < 2; r++) {
+                for (int c = -1; c < 2; c++) {
+                    // don't hit target again
+                    posSplash = getArrayPosforRowCol((toSq.getRow() + r), (toSq.getCol() + c));
+                    if (posSplash != pos) {
+                        unitSplash = _mapSquares[posSplash].getUnit();
+                        if (unitSplash != null) {
+                            // there is a unit there, see if it got hit
+                            hitSplash = getRandomNumber(10, 1);
+                            if (hitSplash == 1) {
+                                // yup, hit 'em
+                                unitSplash.setEff(unitSplash.getEff() - 1);
+                                // update the map square
+                                _mapSquares[posSplash].setUnit(unitSplash);
+                                // if was enemy unit hit, and now black, need to remove them
+                                if ((unitSplash.getOwner() == Unit.OWNER_OPFOR) && (unitSplash.getEff() == Unit.EFF_BLACK)) {
+                                    img = _mapSquares[posSplash].getTerrainType();
+                                    v.setImageResource(img);
+                                    _mapAdapter.setItem(v, img, pos);
+                                    mapSplash = _mapSquares[posSplash];
+                                    mapSplash.setUnit(null);
+                                    _mapSquares[pos] = toSq;
+                                    deselectUnit(unitPos);
+                                    // reduce number of enemy units by one
+                                    _enemyUnitCount--;
+                                    Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
+                                    _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
+                                } else {
+                                    // otherwise, update the map with new icon
+                                    v = (ImageView) _mapAdapter.getItem(posSplash);
+                                    try {
+                                        img = getUnitIcon(unitSplash);
+                                        v.setImageResource(img);
+                                        _mapAdapter.setItem(v, img, pos);
+                                    } catch (Exception e) {
+                                        img = toSq.getTerrainType();
+                                        v.setImageResource(img);
+                                        _mapAdapter.setItem(v, img, pos);
+                                        Log.e(TAG, e.getMessage());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
             }
         }
 
