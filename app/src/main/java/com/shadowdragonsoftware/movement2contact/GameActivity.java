@@ -1,9 +1,5 @@
 package com.shadowdragonsoftware.movement2contact;
 
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.appindexing.Thing;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.shadowdragonsoftware.movement2contact.Prefs;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -252,11 +248,16 @@ public class GameActivity extends AppCompatActivity {
     private String _gameLog = "";
     MapSquare _ms = null;
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
+    // variables to track achievements - start all out as false
+    private boolean _movewithpurpose = false; // Move with a purpose: Win a game in seven or fewer turns.
+    private boolean _soupsandwich = false; // Eat a soup sandwich: Win a game despite losing three units.
+    private boolean _bangbang = false; // Eleven bang-bang: Win a game just using infantry units.
+    private boolean _reargear = false; // Don't be in the rear with the gear: Unsuppress three units in one game with the HQ element.
+    private boolean _rainsteel = false; // Make it rain … steel: Kill three enemy units with your mortars.
+    private boolean _lollygagger = false; // Lolly Gagger: Win a game in the last turn.
+    private boolean _beltfed = false; // Belt fed badass: Kill three enemy units with your machine gun team.
+    private boolean _bravozulu = false; // Bravo Zulu: Win a game when all your units end in green.
+
 
     // ===========================
     // calculateScore
@@ -1766,6 +1767,27 @@ public class GameActivity extends AppCompatActivity {
         _turnString = String.format(getString(R.string.turn), Integer.toString(_turn), getString(R.string.you));
         _actionString = "";
 
+        // load up achievements to set values in case they've uh, already achieved some
+        try {
+            InputStream ins = getResources().openRawResource(
+                    getResources().getIdentifier("achievements",
+                            "raw", getPackageName()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
+            String[] achievements = reader.readLine().split(",");
+            _movewithpurpose = Boolean.parseBoolean(achievements[0]);
+            _soupsandwich = Boolean.parseBoolean(achievements[1]);
+            _bangbang = Boolean.parseBoolean(achievements[2]);
+            _reargear = Boolean.parseBoolean(achievements[3]);
+            _rainsteel = Boolean.parseBoolean(achievements[4]);
+            _lollygagger = Boolean.parseBoolean(achievements[5]);
+            _beltfed = Boolean.parseBoolean(achievements[6]);
+            _bravozulu = Boolean.parseBoolean(achievements[7]);
+
+        }
+        catch (Exception e) {
+            // if error reading achievements, just keep them all defaulted to false
+        }
+
     }
 
     // ===========================
@@ -1801,12 +1823,12 @@ public class GameActivity extends AppCompatActivity {
         TextView tv = null;
 
         // get the custom font
-        Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
-        Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
+        //Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
+        //Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
 
         setContentView(R.layout.activity_game);
         Button buttonEndTurn = (Button) findViewById(R.id.button1);
-        buttonEndTurn.setTypeface(tf);
+        //buttonEndTurn.setTypeface(tf);
         // button click
         buttonEndTurn.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -1837,9 +1859,9 @@ public class GameActivity extends AppCompatActivity {
 
         // get the two textviews for status
         _turnText = (TextView) findViewById(R.id.textView2);
-        _turnText.setTypeface(tft);
+        //_turnText.setTypeface(tft);
         _actionText = (TextView) findViewById(R.id.textView8);
-        _actionText.setTypeface(tft);
+        //_actionText.setTypeface(tft);
 
         // set the mapadapter to build out the initial map
         _gridView = (GridView) findViewById(R.id.gridView1);
@@ -1929,10 +1951,6 @@ public class GameActivity extends AppCompatActivity {
         _turnText.setText(_turnString);
         _actionText.setText(_actionString);
 
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
 
@@ -1968,6 +1986,7 @@ public class GameActivity extends AppCompatActivity {
     public void persistGame() {
 
         StringBuilder csv = new StringBuilder();
+        StringBuilder ach = new StringBuilder();
         MapSquare ms = null;
         Unit u = null;
 
@@ -2027,6 +2046,18 @@ public class GameActivity extends AppCompatActivity {
         try {
             FileOutputStream fos = openFileOutput(SAVELOGFILENAME, Context.MODE_PRIVATE);
             fos.write(_gameLog.getBytes("UTF-8"));
+            fos.close();
+        } catch (Exception e) {
+            // raise an error
+            Log.e(TAG, e.getMessage());
+        }
+
+        // finally, persist state of achievements
+       ach.append((_movewithpurpose ? 1 : 0) + "," + (_soupsandwich ? 1 : 0) + "," + (_bangbang ? 1 : 0) + "," + (_reargear  ? 1 : 0)+ "," +
+               (_rainsteel ? 1 : 0) + "," + (_lollygagger ? 1 : 0) + "," + (_beltfed ? 1 : 0) + "," + (_bravozulu ? 1 : 0) + "\r\n");
+        try {
+            FileOutputStream fos = openFileOutput("achievements.csv", Context.MODE_PRIVATE);
+            fos.write(ach.toString().getBytes("UTF-8"));
             fos.close();
         } catch (Exception e) {
             // raise an error
@@ -2568,39 +2599,13 @@ public class GameActivity extends AppCompatActivity {
     }
 
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public Action getIndexApiAction() {
-        Thing object = new Thing.Builder()
-                .setName("Game Page") // TODO: Define a title for the content shown.
-                // TODO: Make sure this auto-generated URL is correct.
-                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
-                .build();
-        return new Action.Builder(Action.TYPE_VIEW)
-                .setObject(object)
-                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
-                .build();
-    }
-
     @Override
     public void onStart() {
         super.onStart();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        AppIndex.AppIndexApi.start(client, getIndexApiAction());
     }
 
     @Override
     public void onStop() {
         super.onStop();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.end(client, getIndexApiAction());
-        client.disconnect();
     }
 }
