@@ -1,5 +1,6 @@
 package com.shadowdragonsoftware.movement2contact;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -16,13 +17,14 @@ import android.webkit.WebView;
 
 public class HelpActivity extends AppCompatActivity {
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_help);
 
         // get the custom font
-        Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
+        //Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
 
         // get the webview and load up local html page
         WebView wv = (WebView) findViewById(R.id.webView1);
@@ -31,7 +33,7 @@ public class HelpActivity extends AppCompatActivity {
         // add button to close out activity
         // add onclick to help button
         Button okButton = (Button) findViewById(R.id.button6);
-        okButton.setTypeface(tf);
+        //okButton.setTypeface(tf);
         okButton.setTextColor(Color.parseColor("#ffff00"));
         okButton.setBackgroundResource(R.drawable.button_border_enabled);
 

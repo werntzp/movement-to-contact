@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatDelegate;
 import android.widget.Button;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -20,6 +21,8 @@ import java.io.FileOutputStream;
 import android.content.Context;
 import android.view.View.OnTouchListener;
 import 	android.view.MotionEvent;
+import android.support.v4.content.res.ResourcesCompat;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -66,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
             enableResume = false;
         }
 
-        Button resumeButton = (Button) findViewById(R.id.buttonResume);
+        Button resumeButton = (Button) findViewById(R.id.btnResume);
         resumeButton.setEnabled(enableResume);
         if (enableResume) {
             resumeButton.setTextColor(Color.parseColor("#ffff00"));
@@ -105,6 +108,17 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onPause");
     }
 
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,16 +130,21 @@ public class MainActivity extends AppCompatActivity {
         startMediaPlayer();
         boolean enableResume = false;
 
-        // set custom font on label and buttons
-        Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
-        TextView text = (TextView) findViewById(R.id.textViewAppName);
-        text.setTypeface(tf);
-        Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
+        // set custom font on label and buttons
+        //Typeface tf =  ResourcesCompat.getFont(this, R.font.army);
+        //TextView text = (TextView) findViewById(R.id.textViewAppName);
+        //text.setTypeface(tf);
+
+        //Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
+
+        //Typeface tf =  ResourcesCompat.getFont(this, R.font.army); // getResources().getFont(R.font.army);
+        //Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
 
         // disable the resume button if no saved game
-        Button resumeButton = (Button) findViewById(R.id.buttonResume);
-        resumeButton.setTypeface(tft);
+        Button resumeButton = (Button) findViewById(R.id.btnResume);
+        //resumeButton.setTypeface(tft);
         // if there is a saved game file, enable the resume button, otherwise disable it
         try {
             String[] files = fileList();
@@ -158,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                Button btn = (Button) findViewById(R.id.buttonResume);
+                Button btn = (Button) findViewById(R.id.btnResume);
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
@@ -174,13 +193,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // add ontouchlistener to new game button; on the release of the button, go ahead and fire off new game activities
-        Button newButton = (Button) findViewById(R.id.buttonNew);
-        newButton.setTypeface(tft);
+        Button newButton = (Button) findViewById(R.id.btnNew);
+        //newButton.setTypeface(tft);
         newButton.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                Button btn = (Button) findViewById(R.id.buttonNew);
+                Button btn = (Button) findViewById(R.id.btnNew);
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
@@ -204,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // add onclick to help image
-        ImageView imageViewHelp = (ImageView) findViewById(R.id.imageViewHelp);
+        ImageView imageViewHelp = (ImageView) findViewById(R.id.imgHelp);
         imageViewHelp.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, HelpActivity.class);
@@ -212,6 +231,16 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(myIntent);
             }
         });
+
+        // add onclick to help image
+        ImageView imageViewAchievements = (ImageView) findViewById(R.id.imgAchievements);
+        imageViewAchievements.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                Intent myIntent = new Intent(MainActivity.this, AchievementsActivity.class);
+                startActivity(myIntent);
+            }
+        });
+
 
         final ArrayList selectedItems = new ArrayList();
         selectedItems.add(Prefs.SETTINGS_MUSIC);
@@ -228,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // add onclick to sound image
-        ImageView imageViewSound = (ImageView) findViewById(R.id.imageViewSound);
+        ImageView imageViewSound = (ImageView) findViewById(R.id.imgSound);
         imageViewSound.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.MyAlertDialogStyle);

@@ -5,14 +5,26 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.app.ListActivity;
+import android.os.Bundle;
+import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
+import android.widget.ListView;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class AchievementsActivity extends AppCompatActivity {
 
     private static final String TAG = "AchievementsActivity";
+    private static final String ACHIEVEMENTSFILENAME = "achievements.dat";
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -50,6 +62,58 @@ public class AchievementsActivity extends AppCompatActivity {
             }
         });
 
+        // load up all the achievement descriptions an array
+        String[] achievements_desc = {
+                getString(R.string.achievement_movewithapurpose_desc),
+                getString(R.string.achievement_eatasoupsandwich_desc),
+                getString(R.string.achievement_elevenbangbang_desc),
+                getString(R.string.achievement_dontbeinrearwithgear_desc),
+                getString(R.string.achievement_makeitrainsteel_desc),
+                getString(R.string.achievement_lollygagger_desc),
+                getString(R.string.achievement_beltfedbadass_desc),
+                getString(R.string.achievement_dangerclose_desc),
+                getString(R.string.achievement_gleaming_desc)
+        };
+
+        // load up achievement titles in array
+        String[] achievements_title = {
+                getString(R.string.achievement_movewithapurpose_title),
+                getString(R.string.achievement_eatasoupsandwich_title),
+                getString(R.string.achievement_elevenbangbang_title),
+                getString(R.string.achievement_dontbeinrearwithgear_title),
+                getString(R.string.achievement_makeitrainsteel_title),
+                getString(R.string.achievement_lollygagger_title),
+                getString(R.string.achievement_beltfedbadass_title),
+                getString(R.string.achievement_dangerclose_title),
+                getString(R.string.achievement_gleaming_title)
+        };
+
+        // decide on which icon to send in
+        Integer[] achievements_icon = {R.drawable.achievement_locked,R.drawable.achievement_locked,R.drawable.achievement_locked,
+                R.drawable.achievement_locked,R.drawable.achievement_locked,R.drawable.achievement_locked,R.drawable.achievement_locked,
+                R.drawable.achievement_locked,R.drawable.achievement_locked};
+
+        // load up each achievement and see if they've unlocked it, so that will determine icon
+        // load up achievements to set values in case they've uh, already achieved some
+        try {
+            FileInputStream fis = openFileInput(ACHIEVEMENTSFILENAME);
+            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            BufferedReader br = new BufferedReader(isr);
+            String[] achievements = br.readLine().split(",");
+            for (int i = 0; i < 9; i++) {
+                if (Utils.convertToBoolean(achievements[i])) { achievements_icon[i] = R.drawable.achievement_unlocked; };
+            }
+
+        }
+        catch (Exception e) {
+            // if error reading achievements, just keep them all defaulted to false
+            Log.e(TAG, e.getMessage());
+        }
+
+        // load up the list view
+        AchievementsAdapter adapter = new AchievementsAdapter(this, achievements_title, achievements_desc, achievements_icon);
+        ListView list=(ListView)findViewById(R.id.lvwAchievements);
+        list.setAdapter(adapter);
 
     }
 }

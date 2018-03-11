@@ -1,65 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_game"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.shadowdragonsoftware.movement2contact.GameActivity"
-    android:padding="0dp">
+    android:background="#000000"
+    tools:context="com.shadowdragonsoftware.movement2contact.GameActivity">
 
-    <LinearLayout
-        android:background="#000000"
-        android:orientation="vertical"
+    <TextView
+        android:id="@+id/textView2"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:weightSum="1"
-        android:gravity="center"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true">
+        android:layout_height="25dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="0.26"
+        android:background="#000000"
+        android:fontFamily="@font/armythin"
+        android:text="Turn 1"
+        android:textAlignment="center"
+        android:textColor="#ffff00"
+        android:textSize="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:text=""
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/textView2"
-            android:textColor="#ffff00"
-            android:background="#000000"
-            android:textSize="20sp"
-            android:textAlignment="center"
-            android:layout_weight="0.26" />
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="181dp"
+        android:layout_height="32dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/button_border_enabled"
+        android:fontFamily="@font/armythin"
+        android:text="@string/button_end"
+        android:textColor="#ffff00"
+        android:textSize="20dp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-        <GridView
-            android:id="@+id/gridView1"
-            android:layout_width="match_parent"
-            android:numColumns="10"
-            android:columnWidth="50dp"
-            android:layout_height="555dp" />
+    <TextView
+        android:id="@+id/textView8"
+        android:layout_width="match_parent"
+        android:layout_height="53dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginStart="5dp"
+        android:layout_weight="0.26"
+        android:background="#000000"
+        android:fontFamily="@font/armythin"
+        android:text="Make your first move"
+        android:textAlignment="center"
+        android:textColor="#ffff00"
+        android:textSize="17dp"
+        app:layout_constraintBottom_toTopOf="@+id/button1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
-        <TextView
-            android:text=""
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/textView8"
-            android:textColor="#ffff00"
-            android:background="#000000"
-            android:textSize="18sp"
-            android:layout_weight="0.26" />
+    <GridView
+        android:id="@+id/gridView1"
+        android:layout_width="375dp"
+        android:layout_height="464dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="8dp"
+        android:columnWidth="50dp"
+        android:numColumns="10"
+        app:layout_constraintBottom_toTopOf="@+id/textView8"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
-        <Button
-            android:text="@string/button_end"
-            android:background="@drawable/button_border_enabled"
-            android:textColor="#ffff00"
-            android:textStyle="bold"
-            android:layout_centerInParent="true"
-            android:layout_width="181dp"
-            android:layout_height="32dp"
-            android:textSize="20sp"
-            android:id="@+id/button1" />
-
-    </LinearLayout>
-</RelativeLayout>
+</android.support.constraint.ConstraintLayout>

@@ -1,110 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:padding="0dp"
     android:paddingBottom="0dp"
     android:paddingLeft="0dp"
     android:paddingRight="0dp"
     android:paddingTop="0dp"
-    android:background="#000000"
-    tools:context="com.shadowdragonsoftware.movement2contact.MainActivity"
-    android:padding="0dp">
+    tools:context="com.shadowdragonsoftware.movement2contact.MainActivity">
+
 
     <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:srcCompat="@drawable/ic_splashh"
-        android:id="@+id/imageViewBackground"
+        android:id="@+id/imgSplash"
+        android:layout_width="400dp"
+        android:layout_height="600dp"
+        android:layout_marginBottom="40dp"
+        android:contentDescription="@string/cd_background"
         android:scaleType="fitXY"
-        android:layout_marginLeft="0dp"
-        android:layout_marginRight="0dp"
-        android:layout_marginBottom="15dp"
-        android:padding="0dp"
-        android:paddingBottom="0dp"
-        android:paddingEnd="0dp"
-        android:paddingLeft="0dp"
-        android:paddingRight="0dp"
-        android:paddingTop="0dp"
-        android:paddingStart="0dp"
-        android:adjustViewBounds="true"
-        android:layout_alignParentStart="true"
-        android:cropToPadding="false" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@mipmap/m2c_main_splash" />
 
     <TextView
+        android:id="@+id/txtAppName"
+        android:layout_width="346dp"
+        android:layout_height="110dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="25dp"
+        android:fontFamily="@font/army"
         android:text="@string/app_name"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="50dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/imgSplash" />
+
+    <Button
+        android:id="@+id/btnNew"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:textSize="60dp"
-        android:textAlignment="center"
-        android:textStyle="bold"
-        android:textColor="#000000"
-        android:id="@+id/textViewAppName"
-        android:fontFamily="fonts/Army.ttf"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true" />
+        android:layout_marginStart="100dp"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/button_border_enabled"
+        android:fontFamily="@font/armythin"
+        android:maxWidth="125dp"
+        android:text="@string/new_game"
+        android:textColor="#ffff00"
+        android:textSize="20dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtAppName" />
+
+    <Button
+        android:id="@+id/btnResume"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/button_border_disabled"
+        android:fontFamily="@font/armythin"
+        android:maxWidth="125dp"
+        android:text="@string/resume_game"
+        android:textColor="#c0c0c0"
+        android:textSize="20dp"
+        app:layout_constraintStart_toEndOf="@+id/btnNew"
+        app:layout_constraintTop_toTopOf="@+id/btnNew" />
 
     <ImageView
-        android:id="@+id/imageViewLogo"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
-        android:layout_alignTop="@+id/imageViewSound"
-        android:layout_marginStart="-40dp"
+        android:id="@+id/imgSds"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginStart="8dp"
+        android:contentDescription="@string/cd_sds"
+        android:scaleType="fitXY"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:srcCompat="@drawable/sds_logo" />
 
     <ImageView
-        android:id="@+id/imageViewSound"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="325dp"
-        android:layout_marginTop="618dp"
+        android:id="@+id/imgAchievements"
+        android:layout_width="45dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="15dp"
+        android:contentDescription="@string/cd_achievements"
+        app:layout_constraintEnd_toStartOf="@+id/imgSound"
+        app:layout_constraintTop_toTopOf="@+id/imgSound"
+        app:srcCompat="@drawable/achievements_transparent" />
+
+    <ImageView
+        android:id="@+id/imgSound"
+        android:layout_width="45dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="10dp"
+        android:contentDescription="@string/cd_sound"
+        app:layout_constraintEnd_toStartOf="@+id/imgHelp"
+        app:layout_constraintTop_toTopOf="@+id/imgHelp"
         app:srcCompat="@drawable/sound_transparent" />
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:srcCompat="@drawable/help_transparent"
-        android:id="@+id/imageViewHelp"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="618dp"
-        android:layout_marginStart="370dp"/>
+        android:id="@+id/imgHelp"
+        android:layout_width="45dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="12dp"
+        android:contentDescription="@string/cd_help"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/help_transparent" />
 
-    <Button
-        android:text="@string/resume_game"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/buttonResume"
-        android:maxWidth="125dp"
-        android:background="@drawable/button_border_disabled"
-        android:textColor="#c0c0c0"
-        android:textStyle="bold"
-        android:textSize="20dp"
-        android:layout_below="@+id/textViewAppName"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="58dp" />
 
-    <Button
-        android:text="@string/new_game"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/buttonNew"
-        android:maxWidth="125dp"
-        android:background="@drawable/button_border_enabled"
-        android:textColor="#ffff00"
-        android:textStyle="bold"
-        android:textSize="20dp"
-        android:layout_below="@+id/textViewAppName"
-        android:layout_centerHorizontal="true" />
-
-    <Space
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBottom="@+id/buttonNew"
-        android:layout_toStartOf="@+id/buttonNew"
-        android:layout_marginEnd="35dp" />
-
-</RelativeLayout>
+</android.support.constraint.ConstraintLayout>

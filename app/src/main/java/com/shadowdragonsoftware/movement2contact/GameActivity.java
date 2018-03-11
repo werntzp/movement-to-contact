@@ -51,6 +51,15 @@ class Utils {
             }
         }, secs * 1000); // afterDelay will be executed after (secs*1000) milliseconds.
     }
+
+    static boolean convertToBoolean(String value) {
+        boolean returnValue = false;
+        if ("1".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value) ||
+                "true".equalsIgnoreCase(value) || "on".equalsIgnoreCase(value))
+            returnValue = true;
+        return returnValue;
+    }
+
 }
 
 // class for units
@@ -222,12 +231,22 @@ public class GameActivity extends AppCompatActivity {
     private static final String TAG = "GameActivity";
     private static final String SAVEGAMEFILENAME = "savegame.dat";
     private static final String SAVELOGFILENAME = "savelog.dat";
+    private static final String ACHIEVEMENTSFILENAME = "achievements.dat";
     public static final int MAX_ROWS = 15;
     public static final int MAX_COLS = 10;
     public static final int MAX_ARRAY = 150;
     public static final int MAX_TURNS = 20;
     public static final int GAME_OVER_WIN = 1;
     public static final int GAME_OVER_LOSE = 0;
+    private static final int ACHIEVEMENT_MOVE_PURPOSE = 1;
+    private static final int ACHIEVEMENT_SOUP_SANDWICH = 2;
+    private static final int ACHIEVEMENT_BANG_BANG = 3;
+    private static final int ACHIEVEMENT_REAR_GEAR = 4;
+    private static final int ACHIEVEMENT_RAIN_STEEL = 5;
+    private static final int ACHIEVEMENT_LOLLY_GAGGER = 6;
+    private static final int ACHIEVEMENT_BELT_FED = 7;
+    private static final int ACHIEVEMENT_GLEAMING = 8;
+    private static final int ACHIEVEMENT_DANGERCLOSE = 9;
     TextView _turnText;
     TextView _actionText;
     String _actionString = "";
@@ -243,6 +262,7 @@ public class GameActivity extends AppCompatActivity {
     MediaPlayer _mpMortar = null;
     MediaPlayer _mpSniper = null;
     int _enemyUnitCount = 0;
+    int _friendlyUnitsLost = 0;
     boolean _persistGame = true;
     boolean _enemyTurn = false;
     private String _gameLog = "";
@@ -256,8 +276,14 @@ public class GameActivity extends AppCompatActivity {
     private boolean _rainsteel = false; // Make it rain … steel: Kill three enemy units with your mortars.
     private boolean _lollygagger = false; // Lolly Gagger: Win a game in the last turn.
     private boolean _beltfed = false; // Belt fed badass: Kill three enemy units with your machine gun team.
-    private boolean _bravozulu = false; // Bravo Zulu: Win a game when all your units end in green.
-
+    private boolean _gleaming = false; // Gleaming: Win a game when all your units end in green.
+    private boolean _dangerclose = false; // Danger Close: Friendly unit took splash damage from mortar unit.
+    private boolean _onlyUsedInfantry = true; // start this off as true
+    private int _unitsUnsuppressed = 0; // number of units HQ has unsuppressed
+    private int _unitsKilledByMortars = 0; // number of enemy units killed by mortar section
+    private int _unitsKilledByMGs = 0; // number of enemy units killed by machine gun machine gun team
+    private boolean _noDamageTaken = true; // track whether any player unit has taken damage
+    private boolean _splashDamageTaken = false; // track mortar splash damage
 
     // ===========================
     // calculateScore
@@ -336,6 +362,7 @@ public class GameActivity extends AppCompatActivity {
         Unit unitSplash;
         int hitSplash = 0;
         MapSquare mapSplash;
+        String achievementMsg = "";
 
         // if blue unit already attacked this turn, pop out
         if (blueUnit.getHasAttacked()) {
@@ -419,6 +446,7 @@ public class GameActivity extends AppCompatActivity {
                 // set the unit to visible since we hit it
                 redUnit.setIsVisible(true);
                 // certain types of unit cause supression
+                // achievement #3 - if they use a unit other than infantry (or hq), they don't qualify for it
                 switch (blueUnit.getType()) {
                     case Unit.TYPE_MG:
                         // 50% chance mg team causes suppression
@@ -429,7 +457,7 @@ public class GameActivity extends AppCompatActivity {
                             Log.d(TAG, redUnit.getName() + " is suppressed");
                             isSuppressed = true;
                         }
-
+                        _onlyUsedInfantry = false;
                         break;
                     case Unit.TYPE_SNIPER:
                     case Unit.TYPE_MORTAR:
@@ -437,7 +465,7 @@ public class GameActivity extends AppCompatActivity {
                         redUnit.setTurnSuppressed(_turn);
                         Log.d(TAG, redUnit.getName() + " is suppressed");
                         isSuppressed = true;
-
+                        _onlyUsedInfantry = false;
                 }
                 // update array
                 _mapSquares[pos].setUnit(redUnit);
@@ -459,6 +487,10 @@ public class GameActivity extends AppCompatActivity {
                             if (hitSplash == 1) {
                                 // yup, hit 'em
                                 unitSplash.setEff(unitSplash.getEff() - 1);
+                                // achievement #9 - if we hit a player unit, set flag in case we win the game
+                                if (unitSplash.getOwner() == Unit.OWNER_PLAYER) {
+                                    _splashDamageTaken = true;
+                                }
                                 // update the map square
                                 _mapSquares[posSplash].setUnit(unitSplash);
                                 // if was enemy unit hit, and now black, need to remove them
@@ -539,6 +571,13 @@ public class GameActivity extends AppCompatActivity {
             Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
             _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
             _actionText.setText(redUnit.getName() + "was destroyed");
+            // if enemy unit was killed off by a mortar or mg, record that
+            if ((blueUnit.getType() == Unit.TYPE_MORTAR)) {
+                _unitsKilledByMortars++;
+            }
+            if ((blueUnit.getType() == Unit.TYPE_MG)) {
+                _unitsKilledByMGs++;
+            }
         } else {
             Utils.delay(secs, new Utils.DelayCallback() {
                 @Override
@@ -560,7 +599,63 @@ public class GameActivity extends AppCompatActivity {
 
         // are there any enemy units left?
         if (_enemyUnitCount == 0) {
-            showEndGameDialog(GAME_OVER_WIN);
+            // achievement #1 - move with a purpose - win in 7 or fewer rounds
+            if ((_turn <= 7) && (!_movewithpurpose))  {
+                _movewithpurpose = true;
+                persistAchievements();
+                achievementMsg += getString(R.string.achievement_movewithapurpose_title);
+            }
+            // achievement #2 - soup sandwich - win losing 3 or more units
+            if ((_friendlyUnitsLost >= 3) && (!_soupsandwich))  {
+                _soupsandwich = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_eatasoupsandwich_title);
+            }
+            // achievement #3 - 11bravo - only use infantry
+            if ((_onlyUsedInfantry) && (!_bangbang)) {
+                _bangbang = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_elevenbangbang_title);            }
+            // achievement #4 - rear - unsuppress 3 units in one game
+            if ((_unitsUnsuppressed >= 3) && (!_reargear)) {
+                _reargear = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_dontbeinrearwithgear_title);            }
+            // achievement #5 - rain steel - kill 3 units in one game with mortar
+            if ((_unitsKilledByMortars >= 3) && (!_rainsteel)) {
+                _rainsteel = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_makeitrainsteel_title);            }
+            // achievement #6 - lollygagger - win on last turn
+            if ((_turn == MAX_TURNS) && (!_lollygagger)) {
+                _lollygagger = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_lollygagger_title);            }
+            // achievement #7 - belt fed - kill 3 units in one game with machine gun
+            if ((_unitsKilledByMGs >= 3) && (!_beltfed)) {
+                _beltfed = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_beltfedbadass_title);            }
+            // achievement #8 - gleaming - no units take damage
+            if ((_noDamageTaken) && (!_gleaming)) {
+                _gleaming = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_gleaming_title);            }
+            // achievement #8 - gleaming - no units take damage
+            if ((_splashDamageTaken) && (!_dangerclose)) {
+                _dangerclose = true;
+                persistAchievements();
+                if (achievementMsg.length() > 0) { achievementMsg += ", "; }
+                achievementMsg += getString(R.string.achievement_dangerclose_title);            }
+
+            showEndGameDialog(GAME_OVER_WIN, achievementMsg);
         }
 
         Log.d(TAG, "Exit doAttack");
@@ -842,7 +937,13 @@ public class GameActivity extends AppCompatActivity {
             Log.d(TAG, "damage roll: " + Integer.toString(damage));
             if (damage <= 8) {
                 blueUnit.setEff(blueUnit.getEff() - 1);
+                // since at least one unit took damage, can't get gleaming achievement
+                _noDamageTaken = false;
                 Log.d(TAG, blueUnit.getName() + " effectiveness now " + blueUnit.getEff());
+                // if player unit now effectiveness black, decrement number of friendly units
+                if (blueUnit.getEff() == Unit.EFF_BLACK) {
+                    _friendlyUnitsLost++;
+                }
             }
 
             // certain types of unit cause supression
@@ -1252,7 +1353,7 @@ public class GameActivity extends AppCompatActivity {
         }
 
         if (gameOver == true) {
-            showEndGameDialog(GAME_OVER_LOSE);
+            showEndGameDialog(GAME_OVER_LOSE, "");
         }
 
 
@@ -1281,6 +1382,8 @@ public class GameActivity extends AppCompatActivity {
                         msHQ = getHQUnitMapSquare();
                         if ((isAdjacent(msHQ, ms) && (u.getOwner() == Unit.OWNER_PLAYER))) {
                             u.setIsSuppressed(false);
+                            // increment count for achievement #4
+                            _unitsUnsuppressed++;
                             // if no longer suppressed, need to flip icon back
                             pos = getArrayPosforRowCol(ms.getRow(), ms.getCol());
                             ImageView v = (ImageView) _mapAdapter.getItem(pos);
@@ -1769,23 +1872,25 @@ public class GameActivity extends AppCompatActivity {
 
         // load up achievements to set values in case they've uh, already achieved some
         try {
-            InputStream ins = getResources().openRawResource(
-                    getResources().getIdentifier("achievements",
-                            "raw", getPackageName()));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
-            String[] achievements = reader.readLine().split(",");
-            _movewithpurpose = Boolean.parseBoolean(achievements[0]);
-            _soupsandwich = Boolean.parseBoolean(achievements[1]);
-            _bangbang = Boolean.parseBoolean(achievements[2]);
-            _reargear = Boolean.parseBoolean(achievements[3]);
-            _rainsteel = Boolean.parseBoolean(achievements[4]);
-            _lollygagger = Boolean.parseBoolean(achievements[5]);
-            _beltfed = Boolean.parseBoolean(achievements[6]);
-            _bravozulu = Boolean.parseBoolean(achievements[7]);
+
+            FileInputStream fis = openFileInput(ACHIEVEMENTSFILENAME);
+            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            BufferedReader br = new BufferedReader(isr);
+            String[] achievements = br.readLine().split(",");
+            _movewithpurpose = Utils.convertToBoolean(achievements[0]);
+            _soupsandwich = Utils.convertToBoolean(achievements[1]);
+            _bangbang = Utils.convertToBoolean(achievements[2]);
+            _reargear = Utils.convertToBoolean(achievements[3]);
+            _rainsteel = Utils.convertToBoolean(achievements[4]);
+            _lollygagger = Utils.convertToBoolean(achievements[5]);
+            _beltfed = Utils.convertToBoolean(achievements[6]);
+            _dangerclose = Utils.convertToBoolean(achievements[7]);
+            _gleaming = Utils.convertToBoolean(achievements[8]);
 
         }
         catch (Exception e) {
             // if error reading achievements, just keep them all defaulted to false
+            Log.e(TAG, e.getMessage());
         }
 
     }
@@ -1981,12 +2086,33 @@ public class GameActivity extends AppCompatActivity {
     }
 
     // ===========================
+    // persistAchievements
+    // ===========================
+    public void persistAchievements() {
+
+        StringBuilder ach = new StringBuilder();
+        ach.append((_movewithpurpose ? 1 : 0) + "," + (_soupsandwich ? 1 : 0) + "," + (_bangbang ? 1 : 0) + "," + (_reargear  ? 1 : 0)+ "," +
+                (_rainsteel ? 1 : 0) + "," + (_lollygagger ? 1 : 0) + "," + (_beltfed ? 1 : 0) + "," +
+                (_dangerclose ? 1 : 0) + "," + (_gleaming ? 1 : 0) + "\r\n");
+        try {
+            FileOutputStream fos = openFileOutput(ACHIEVEMENTSFILENAME, Context.MODE_PRIVATE);
+            fos.write(ach.toString().getBytes("UTF-8"));
+            fos.close();
+
+        } catch (Exception e) {
+            // raise an error
+            Log.e(TAG, e.getMessage());
+        }
+
+    }
+
+
+    // ===========================
     // persistGame
     // ===========================
     public void persistGame() {
 
         StringBuilder csv = new StringBuilder();
-        StringBuilder ach = new StringBuilder();
         MapSquare ms = null;
         Unit u = null;
 
@@ -2053,18 +2179,7 @@ public class GameActivity extends AppCompatActivity {
         }
 
         // finally, persist state of achievements
-       ach.append((_movewithpurpose ? 1 : 0) + "," + (_soupsandwich ? 1 : 0) + "," + (_bangbang ? 1 : 0) + "," + (_reargear  ? 1 : 0)+ "," +
-               (_rainsteel ? 1 : 0) + "," + (_lollygagger ? 1 : 0) + "," + (_beltfed ? 1 : 0) + "," + (_bravozulu ? 1 : 0) + "\r\n");
-        try {
-            FileOutputStream fos = openFileOutput("achievements.csv", Context.MODE_PRIVATE);
-            fos.write(ach.toString().getBytes("UTF-8"));
-            fos.close();
-        } catch (Exception e) {
-            // raise an error
-            Log.e(TAG, e.getMessage());
-        }
-
-
+        persistAchievements();
 
     }
 
@@ -2323,7 +2438,6 @@ public class GameActivity extends AppCompatActivity {
                 _mapSquares[pos].setUnit(unit);
                 // also, overwrite the image for images array
                 _imageIds[pos] = getUnitIcon(unit);
-
             }
             reader.close();
         } catch (IOException ioe) {
@@ -2551,7 +2665,7 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     // showEndGameDialog
     // ===========================
-    public void showEndGameDialog(int message) {
+    public void showEndGameDialog(int message, String achievements) {
 
         int title = 0;
         String body = null;
@@ -2564,6 +2678,11 @@ public class GameActivity extends AppCompatActivity {
             title = R.string.game_over_win_title;
             // they won the game, so also figure out the score
             body = String.format(getString(R.string.game_over_win_body), calculateStars());
+        }
+
+        // if unlocked achievements, add them to the dialog
+        if (achievements.length() > 0) {
+            body += "\r\n\r\nYou unlocked new achievement(s): " + achievements;
         }
 
         // delete any saved game data
@@ -2580,6 +2699,7 @@ public class GameActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
         builder.setMessage(body);
         builder.setTitle(getString(title));
+        builder.setCancelable(false);
         builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 // back to main menu

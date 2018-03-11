@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Movement to Contact</string>
-    <string name="app_info">Version 1.0 - January 2017</string>
+    <string name="app_info">Version 1.1 - July 2017</string>
     <string name="title_activity_help">HelpActivity</string>
     <string name="music">Music</string>
     <string name="soundfx">Sound Effects</string>
@@ -28,7 +28,7 @@
     <string name="opfor_infantry">Enemy infantry squads are not as strong as your platoons, but can easily disappear back into the terrain when you are not adjacent to them.</string>
     <string name="opfor_mg">An enemy machine gun team that can attack two squares away and has a chance to suppress your units.</string>
     <string name="opfor_sniper">Enemy sniper teams can pin down your units from a greater distance and cause them to be suppressed easily.</string>
-    <string name="player_hq">A headquarters unit can remove suppression from any unit it is adjacent to at the end of the your turn. Plus, any enemy unit within two squares always remains visible. However, it doesn\'t pack much of an offensive punch.</string>\
+    <string name="player_hq">A headquarters unit can remove suppression from any unit it is adjacent to at the end of the your turn. Plus, any enemy unit within two squares always remains visible. However, it doesn\'t pack much of an offensive punch.</string>
     <string name="player_infantry">Infantry platoons consist of several squads with mixture of semi-automatic rifles and machine guns. They can only attack adjacent enemy units.</string>
     <string name="player_mg">The machine gun section provides the company with additional firepower and can attack enemy units two squares away.</string>
     <string name="player_mortar">Mortars provides an indirect attack capability up to five squares away. The mortar section can also conduct \"recon by fire\" attacking into terrain to identify hidden enemy units.</string>
@@ -45,4 +45,28 @@
     <string name="opening_msg_title">Your Mission</string>
     <string name="game_log">Game Turn Log</string>
     <string name="fire_mortars">Fire mortars into this map square?</string>
+    <string name="achievement_title">You unlocked a new achievement!</string>
+    <string name="achievement_movewithapurpose_title">Move with a purpose</string>
+    <string name="achievement_eatasoupsandwich_title">Eat a soup sandwich</string>
+    <string name="achievement_elevenbangbang_title">Eleven bang bang</string>
+    <string name="achievement_dontbeinrearwithgear_title">Not in the rear with the gear</string>
+    <string name="achievement_makeitrainsteel_title">Make it rain</string>
+    <string name="achievement_lollygagger_title">Lolly gagger</string>
+    <string name="achievement_beltfedbadass_title">Belt fed badass</string>
+    <string name="achievement_dangerclose_title">Danger close</string>
+    <string name="achievement_gleaming_title">Gleaming!</string>
+    <string name="achievement_movewithapurpose_desc">Win a game in seven or fewer turns</string>
+    <string name="achievement_eatasoupsandwich_desc">Win a game despite losing three units</string>
+    <string name="achievement_elevenbangbang_desc">Win a game just using infantry units (no mortars or machine guns)</string>
+    <string name="achievement_dontbeinrearwithgear_desc">Remove suppression from three units in one game with your HQ element</string>
+    <string name="achievement_makeitrainsteel_desc">Kill three enemy units in one game with your mortars</string>
+    <string name="achievement_lollygagger_desc">Win a game in the last turn</string>
+    <string name="achievement_beltfedbadass_desc">Kill three enemy units in one game with your machine gun team</string>
+    <string name="achievement_dangerclose_desc">Win a game when one of your units took splash damage from your own mortar team</string>
+    <string name="achievement_gleaming_desc">Win a game when all your units finish with full effectiveness</string>
+    <string name="cd_sds">Shadow Dragon Software logo</string>
+    <string name="cd_sound">Sound icon</string>
+    <string name="cd_achievements">Achievements icon</string>
+    <string name="cd_help">Help icon</string>
+    <string name="cd_background">Camoflage image with soldiers</string>
 </resources>
