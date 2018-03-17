@@ -10,6 +10,7 @@
     <string name="attackmsg_miss">%1$s was attacked, but took no casualties</string>
     <string name="attackmsg_killed">%1$s is no longer combat effective</string>
     <string name="attackmsg_nounit">No emey unit detected</string>
+    <string name="attackmsg_splashdamage">Friendly fire! One of your units was hit by a stray mortar.</string>
     <string name="turn">Turn %1$s (%2$s)</string>
     <string name="you">You</string>
     <string name="computer">Enemy</string>

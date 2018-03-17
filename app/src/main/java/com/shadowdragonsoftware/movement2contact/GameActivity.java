@@ -330,16 +330,21 @@ public class GameActivity extends AppCompatActivity {
     // deselect unit in map square by changing border
     // ==========================
     void deselectUnit(int pos) {
-        ImageView v = (ImageView) _mapAdapter.getItem(pos);
-        v.setPadding(2, 2, 2, 2);
-        v.setBackgroundColor(Color.BLACK);
+        try {
+            ImageView v = (ImageView) _mapAdapter.getItem(pos);
+            v.setPadding(2, 2, 2, 2);
+            v.setBackgroundColor(Color.BLACK);
+            _mapAdapter.notifyDataSetChanged();
+        }
+        catch (Exception e) {
+            Log.d(TAG,  e.getMessage());
+        }
     }
-
 
     // ===========================
     // doAttack
     // ===========================
-    void doAttack(MapSquare fromSq, MapSquare toSq) {
+    void    doAttack(MapSquare fromSq, MapSquare toSq) {
 
         Log.d(TAG, "Enter doAttack");
 
@@ -485,6 +490,7 @@ public class GameActivity extends AppCompatActivity {
                             // there is a unit there, see if it got hit
                             hitSplash = getRandomNumber(10, 1);
                             if (hitSplash == 1) {
+                                Log.d(TAG, "Splash damage occured to: " + unitSplash.getName());
                                 // yup, hit 'em
                                 unitSplash.setEff(unitSplash.getEff() - 1);
                                 // achievement #9 - if we hit a player unit, set flag in case we win the game
@@ -506,19 +512,21 @@ public class GameActivity extends AppCompatActivity {
                                     _enemyUnitCount--;
                                     Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
                                     _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
-                                } else {
-                                    // otherwise, update the map with new icon
+                                } else if ((unitSplash.getOwner() == Unit.OWNER_PLAYER)) {
+                                    // otherwise, update the map with new icon for player unit; don't change icon if enemy  unit because we're not supposed to know
+                                    // what their damage is at
                                     v = (ImageView) _mapAdapter.getItem(posSplash);
                                     try {
                                         img = getUnitIcon(unitSplash);
                                         v.setImageResource(img);
-                                        _mapAdapter.setItem(v, img, pos);
+                                        _mapAdapter.setItem(v, img, posSplash);
                                     } catch (Exception e) {
                                         img = toSq.getTerrainType();
                                         v.setImageResource(img);
-                                        _mapAdapter.setItem(v, img, pos);
+                                        _mapAdapter.setItem(v, img, posSplash);
                                         Log.e(TAG, e.getMessage());
                                     }
+
                                 }
                             }
                         }
@@ -552,6 +560,10 @@ public class GameActivity extends AppCompatActivity {
                 attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
             }
         }
+        if (_splashDamageTaken) {
+            // issue #53 - add a note for the player
+            attackMsg += "\r\n" + getString(R.string.attackmsg_splashdamage);
+        }
 
         // display attak message, but also log it
         _gameLog += "- " + attackMsg + "\r\n";
@@ -566,6 +578,7 @@ public class GameActivity extends AppCompatActivity {
             toSq.setUnit(null);
             _mapSquares[pos] = toSq;
             deselectUnit(unitPos);
+            _mapAdapter.notifyDataSetChanged();
             // reduce number of enemy units by one
             _enemyUnitCount--;
             Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
@@ -657,6 +670,8 @@ public class GameActivity extends AppCompatActivity {
 
             showEndGameDialog(GAME_OVER_WIN, achievementMsg);
         }
+
+        _mapAdapter.notifyDataSetChanged();
 
         Log.d(TAG, "Exit doAttack");
 
@@ -1363,6 +1378,8 @@ public class GameActivity extends AppCompatActivity {
         // loop through all the units and reset move, attack flag and maybe suppression flag
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
             ms = _mapSquares[ctr];
+            // issue #55 - red highlight not always going away, so explicitly remove it here
+            deselectUnit(getArrayPosforRowCol(ms.getRow(), ms.getCol()));
             u = ms.getUnit();
             if (u != null) {
                 u.setRemainingMove(u.getMaxMove());
@@ -1406,6 +1423,9 @@ public class GameActivity extends AppCompatActivity {
         if (_activeUnit != null) {
             _activeUnit = null;
         }
+
+        // refresh?
+        _mapAdapter.notifyDataSetChanged();
 
         // actually do computer part of the turn
         doOpForTurn();
