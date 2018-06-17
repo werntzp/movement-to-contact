@@ -362,6 +362,7 @@ public class GameActivity extends AppCompatActivity {
         boolean isHit = false;
         boolean isSuppressed = false;
         boolean isNoLongerCombatEffective = false;
+        boolean friendlyFire = false;
         int s;
         int posSplash = 0;
         Unit unitSplash;
@@ -496,6 +497,7 @@ public class GameActivity extends AppCompatActivity {
                                 // achievement #9 - if we hit a player unit, set flag in case we win the game
                                 if (unitSplash.getOwner() == Unit.OWNER_PLAYER) {
                                     _splashDamageTaken = true;
+                                    friendlyFire = true;
                                 }
                                 // update the map square
                                 _mapSquares[posSplash].setUnit(unitSplash);
@@ -560,7 +562,8 @@ public class GameActivity extends AppCompatActivity {
                 attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
             }
         }
-        if (_splashDamageTaken) {
+        // issue #57 - fixed this message not resetting properly
+        if (friendlyFire) {
             // issue #53 - add a note for the player
             attackMsg += "\r\n" + getString(R.string.attackmsg_splashdamage);
         }
@@ -661,7 +664,7 @@ public class GameActivity extends AppCompatActivity {
                 persistAchievements();
                 if (achievementMsg.length() > 0) { achievementMsg += ", "; }
                 achievementMsg += getString(R.string.achievement_gleaming_title);            }
-            // achievement #8 - gleaming - no units take damage
+            // achievement #9 - danger close - hit our own unit
             if ((_splashDamageTaken) && (!_dangerclose)) {
                 _dangerclose = true;
                 persistAchievements();
