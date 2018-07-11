@@ -820,20 +820,7 @@ public class GameActivity extends AppCompatActivity {
                 }
                 return;
             }
-            // (b) if enemy there and in range, attack
-            if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
-                // next, need to see if enemy unit visible; if not, only mortar can do recon by fire and attack
-                if (ms.getUnit().getIsVisible()) {
-                    doAttack(_activeSq, ms);
-                    return;
-                } else {
-                    if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
-                        doAttack(_activeSq, ms);
-                    } else {
-                        // ignore
-                    }
-                }
-            }
+            // 7/11/18 - issue #59, when mortar is firing, this code needs to go first otherwise it wasn't getting tripped
             // (c) we have a mortar firing into an empty space, which is still legal
             if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (!_activeUnit.getHasAttacked()) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
                 // issue #42 - if picking empty square, pop up dialog to be on safe side
@@ -868,6 +855,21 @@ public class GameActivity extends AppCompatActivity {
                 }
                 else {
                     doAttack(_activeSq, ms);
+                }
+            }
+
+            // (b) if enemy there and in range, attack
+            if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+                // next, need to see if enemy unit visible; if not, only mortar can do recon by fire and attack
+                if (ms.getUnit().getIsVisible()) {
+                    doAttack(_activeSq, ms);
+                    return;
+                } else {
+                    if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
+                        doAttack(_activeSq, ms);
+                    } else {
+                        // ignore
+                    }
                 }
             }
             // (d)
