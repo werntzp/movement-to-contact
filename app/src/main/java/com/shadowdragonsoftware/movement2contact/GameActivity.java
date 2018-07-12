@@ -238,15 +238,6 @@ public class GameActivity extends AppCompatActivity {
     public static final int MAX_TURNS = 20;
     public static final int GAME_OVER_WIN = 1;
     public static final int GAME_OVER_LOSE = 0;
-    private static final int ACHIEVEMENT_MOVE_PURPOSE = 1;
-    private static final int ACHIEVEMENT_SOUP_SANDWICH = 2;
-    private static final int ACHIEVEMENT_BANG_BANG = 3;
-    private static final int ACHIEVEMENT_REAR_GEAR = 4;
-    private static final int ACHIEVEMENT_RAIN_STEEL = 5;
-    private static final int ACHIEVEMENT_LOLLY_GAGGER = 6;
-    private static final int ACHIEVEMENT_BELT_FED = 7;
-    private static final int ACHIEVEMENT_GLEAMING = 8;
-    private static final int ACHIEVEMENT_DANGERCLOSE = 9;
     TextView _turnText;
     TextView _actionText;
     String _actionString = "";
@@ -794,10 +785,18 @@ public class GameActivity extends AppCompatActivity {
                 }
                 // if enemy not visible, we stumbled onto them so they get a first shot
                 if (!ms.getUnit().getIsVisible()) {
-                    doOpForAttack(ms, _activeSq);
+                    // issue #56 - if player has no move and enemy hidden, this should not happen
+                    if (isAbleToMoveInto(ms, _activeSq.getUnit())) {
+                        doOpForAttack(ms, _activeSq);
+                        return;
+                    }
+                    else {
+                        // just hop out
+                        return;
+                    }
                 }
                 if (!_activeUnit.getHasAttacked()) {
-                    doAttack(_activeSq, ms);
+                        doAttack(_activeSq, ms);
                 } else {
                     _actionText.setText(String.format(getString(R.string.already_attacked), _activeUnit.getName()));
                 }
