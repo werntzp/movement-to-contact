@@ -1292,7 +1292,7 @@ public class GameActivity extends AppCompatActivity {
                             stayVisible = false;
                             // next, even if should be invisible, randomly figure out if they should stay visible (4 in 10 chance)
                             result = getRandomNumber(10, 1);
-                            Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
+                            //Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
                             if ((!stayVisible) && (result <= 4)) {
                                 stayVisible = true;
                                 redUnit.setIsVisible(true);
