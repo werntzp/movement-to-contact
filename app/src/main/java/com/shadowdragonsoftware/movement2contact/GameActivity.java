@@ -481,7 +481,8 @@ public class GameActivity extends AppCompatActivity {
                         if (unitSplash != null) {
                             // there is a unit there, see if it got hit
                             hitSplash = getRandomNumber(10, 1);
-                            if (hitSplash == 1) {
+                            // issue #60 - if unit taking splash damage is already not combat effective, then don't even bother
+                            if ((hitSplash == 1) && (unitSplash.getEff() != Unit.EFF_BLACK)) {
                                 Log.d(TAG, "Splash damage occured to: " + unitSplash.getName());
                                 // yup, hit 'em
                                 unitSplash.setEff(unitSplash.getEff() - 1);
@@ -2738,10 +2739,15 @@ public class GameActivity extends AppCompatActivity {
             }
         });
         AlertDialog dialog = builder.create();
-        dialog.show();
-
+        // was getting a weird error here so throwing in a catch to see if I can get more details;
+        // maybe just an Android Studio on Chromebook thing?
+        try {
+            dialog.show();
+        }
+        catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
     }
-
 
     @Override
     public void onStart() {
