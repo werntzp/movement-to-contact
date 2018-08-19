@@ -38,6 +38,8 @@ class Utils {
 
     // Delay mechanism
 
+    private static final String TAG = "Utils";
+
     interface DelayCallback{
         void afterDelay();
     }
@@ -47,7 +49,13 @@ class Utils {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                delayCallback.afterDelay();
+
+                try {
+                    delayCallback.afterDelay();
+                }
+                catch (Exception e) {
+                    Log.e(TAG, e.getMessage());
+                }
             }
         }, secs * 1000); // afterDelay will be executed after (secs*1000) milliseconds.
     }
@@ -235,7 +243,7 @@ public class GameActivity extends AppCompatActivity {
     public static final int MAX_ROWS = 15;
     public static final int MAX_COLS = 10;
     public static final int MAX_ARRAY = 150;
-    public static final int MAX_TURNS = 20;
+    public static final int MAX_TURNS = 25;
     public static final int GAME_OVER_WIN = 1;
     public static final int GAME_OVER_LOSE = 0;
     TextView _turnText;
@@ -2735,6 +2743,7 @@ public class GameActivity extends AppCompatActivity {
         builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 // back to main menu
+                dialog.dismiss();
                 finish();
             }
         });
@@ -2742,6 +2751,7 @@ public class GameActivity extends AppCompatActivity {
             @Override
             public void onDismiss(DialogInterface dialog) {
                 // back to main menu
+                dialog.dismiss();
                 finish();
             }
         });
@@ -2750,6 +2760,7 @@ public class GameActivity extends AppCompatActivity {
             dialog.show();
         }
         catch (Exception e) {
+            dialog.dismiss();
             Log.e(TAG, e.getMessage());
         }
         */
