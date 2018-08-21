@@ -25,7 +25,7 @@
     <TextView
         android:id="@+id/txtEndGameMessage"
         android:layout_width="329dp"
-        android:layout_height="125dp"
+        android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="26dp"
