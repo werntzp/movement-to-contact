@@ -25,7 +25,7 @@
     <TextView
         android:id="@+id/txtEndGameMessage"
         android:layout_width="329dp"
-        android:layout_height="wrap_content"
+        android:layout_height="275dp"
         android:layout_marginEnd="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="26dp"
@@ -55,6 +55,37 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <ImageView
+        android:id="@+id/imgStar1"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="89dp"
+        android:layout_marginStart="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/achievement_locked" />
+
+    <ImageView
+        android:id="@+id/imgStar2"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="44dp"
+        android:layout_marginStart="15dp"
+        app:layout_constraintBottom_toTopOf="@+id/btnClose"
+        app:layout_constraintStart_toEndOf="@+id/imgStar1"
+        app:srcCompat="@drawable/achievement_locked" />
+
+    <ImageView
+        android:id="@+id/imgStar3"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="89dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginStart="15dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/imgStar2"
+        app:srcCompat="@drawable/achievement_locked" />
 
 
 
