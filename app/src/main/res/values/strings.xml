@@ -42,7 +42,7 @@
     <string name="game_over_win_title">Mission Accomplished!</string>
     <string name="game_over_lose_title">Mission Failed</string>
     <string name="game_over_lose_body">You did not clear this sector which will result in the failure of the battalion assault againt the enemy stronghold.</string>
-    <string name="game_over_win_body">You successfully cleared this sector allowing the larger battalion attack to occur. Based on the number of turns it took and status of your company, you have earned %1$d out of 3 stars.</string>
+    <string name="game_over_win_body">You successfully cleared this sector allowing the larger battalion attack to occur.</string>
     <string name="opening_msg">You have 25 turns to clear this sector, otherwise the main battalion attack is at risk of failure. Intel is estimating %1$s enemy units in this area with a potential mix of automatic weapons, machine guns and maybe snipers. Good luck!</string>
     <string name="opening_msg_title">Your Mission</string>
     <string name="game_log">Game Turn Log</string>

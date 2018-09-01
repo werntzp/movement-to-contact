@@ -2702,6 +2702,7 @@ public class GameActivity extends AppCompatActivity {
 
         String title = null;
         String body = null;
+        int stars = 0;
 
         // decide which title to use
         if (message == GAME_OVER_LOSE) {
@@ -2710,7 +2711,8 @@ public class GameActivity extends AppCompatActivity {
         } else {
             title = getString(R.string.game_over_win_title);
             // they won the game, so also figure out the score
-            body = String.format(getString(R.string.game_over_win_body), calculateStars());
+            body = getString(R.string.game_over_win_body);
+            stars = calculateStars();
         }
 
         // if unlocked achievements, add them to the dialog
@@ -2732,6 +2734,7 @@ public class GameActivity extends AppCompatActivity {
         Intent myIntent = new Intent(GameActivity.this, EndGameActivity.class);
         myIntent.putExtra("TITLE", title);
         myIntent.putExtra("MESSAGE", body);
+        myIntent.putExtra("STARS", stars);
         startActivity(myIntent);
 
         /*
