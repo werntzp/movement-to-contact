@@ -2700,17 +2700,19 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     public void showEndGameDialog(int message, String achievements) {
 
-        int title = 0;
+        String title = null;
         String body = null;
+        int stars = 0;
 
         // decide which title to use
         if (message == GAME_OVER_LOSE) {
-            title = R.string.game_over_lose_title;
+            title = getString(R.string.game_over_lose_title);
             body = getString(R.string.game_over_lose_body);
         } else {
-            title = R.string.game_over_win_title;
+            title = getString(R.string.game_over_win_title);
             // they won the game, so also figure out the score
-            body = String.format(getString(R.string.game_over_win_body), calculateStars());
+            body = getString(R.string.game_over_win_body);
+            stars = calculateStars();
         }
 
         // if unlocked achievements, add them to the dialog
@@ -2728,6 +2730,14 @@ public class GameActivity extends AppCompatActivity {
         // set flag so when we hit onPause, don't try to save data
         _persistGame = false;
 
+        // instead of using alertdialog, send them to another intent for end game message
+        Intent myIntent = new Intent(GameActivity.this, EndGameActivity.class);
+        myIntent.putExtra("TITLE", title);
+        myIntent.putExtra("MESSAGE", body);
+        myIntent.putExtra("STARS", stars);
+        startActivity(myIntent);
+
+        /*
         // instantiate an AlertDialog.Builder with its constructor
         AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
         builder.setMessage(body);
@@ -2749,8 +2759,6 @@ public class GameActivity extends AppCompatActivity {
             }
         });
         AlertDialog dialog = builder.create();
-        // was getting a weird error here so throwing in a catch to see if I can get more details;
-        // maybe just an Android Studio on Chromebook thing?
         try {
             dialog.show();
         }
@@ -2758,6 +2766,7 @@ public class GameActivity extends AppCompatActivity {
             dialog.dismiss();
             Log.e(TAG, e.getMessage());
         }
+        */
     }
 
     @Override

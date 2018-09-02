@@ -12,6 +12,7 @@
         <meta-data
             android:name="com.google.android.gms.games.APP_ID"
             android:value="@string/app_id" />
+
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait">
@@ -24,17 +25,15 @@
         <activity
             android:name=".GameActivity"
             android:screenOrientation="portrait" />
-
         <activity
             android:name=".HelpActivity"
             android:label="@string/title_activity_help"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
-
         <activity
             android:name=".AchievementsActivity"
             android:screenOrientation="portrait" />
-
+        <activity android:name=".EndGameActivity"></activity>
     </application>
 
 </manifest>

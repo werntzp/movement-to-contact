@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    tools:context="com.shadowdragonsoftware.movement2contact.EndGameActivity">
+
+    <TextView
+        android:id="@+id/txtEndGameTitle"
+        android:layout_width="329dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="30dp"
+        android:textAlignment="center"
+        android:ems="10"
+        android:textColor="#ffff00"
+        android:textSize="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/txtEndGameMessage"
+        android:layout_width="329dp"
+        android:layout_height="275dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="26dp"
+        android:ems="10"
+        android:textColor="#ffff00"
+        android:textSize="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/txtEndGameTitle" />
+
+    <Button
+        android:id="@+id/btnClose"
+        android:layout_width="90dp"
+        android:layout_height="35dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:background="#000000"
+        android:fontFamily="@font/armythin"
+        android:paddingTop="0dp"
+        android:text="@string/button_close"
+        android:textColor="#ffff00"
+        android:textSize="20dp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/imgStar1"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="89dp"
+        android:layout_marginStart="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/achievement_locked" />
+
+    <ImageView
+        android:id="@+id/imgStar2"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="44dp"
+        android:layout_marginStart="15dp"
+        app:layout_constraintBottom_toTopOf="@+id/btnClose"
+        app:layout_constraintStart_toEndOf="@+id/imgStar1"
+        app:srcCompat="@drawable/achievement_locked" />
+
+    <ImageView
+        android:id="@+id/imgStar3"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginBottom="89dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginStart="15dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/imgStar2"
+        app:srcCompat="@drawable/achievement_locked" />
+
+
+
+</android.support.constraint.ConstraintLayout>
