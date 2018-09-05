@@ -1836,6 +1836,37 @@ public class GameActivity extends AppCompatActivity {
 
     }
 
+    // ==========================
+    // load up the saved achievements
+    // ==========================
+    void loadAchievements() {
+
+        // load up each achievement and see if they've unlocked it, so that will determine icon
+        // load up achievements to set values in case they've uh, already achieved some
+        try {
+            FileInputStream fis = openFileInput(ACHIEVEMENTSFILENAME);
+            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            BufferedReader br = new BufferedReader(isr);
+            String[] achievements = br.readLine().split(",");
+            if (Utils.convertToBoolean(achievements[0])) { _movewithpurpose = true; }
+            if (Utils.convertToBoolean(achievements[1])) { _soupsandwich = true; }
+            if (Utils.convertToBoolean(achievements[2])) { _bangbang = true; }
+            if (Utils.convertToBoolean(achievements[3])) { _reargear = true; }
+            if (Utils.convertToBoolean(achievements[4])) { _rainsteel = true; }
+            if (Utils.convertToBoolean(achievements[5])) { _lollygagger = true; }
+            if (Utils.convertToBoolean(achievements[6])) { _beltfed = true; }
+            if (Utils.convertToBoolean(achievements[7])) { _dangerclose = true; }
+            if (Utils.convertToBoolean(achievements[8])) { _gleaming = true; }
+
+        }
+        catch (Exception e) {
+            // if error reading achievements, just keep them all defaulted to false
+            Log.e(TAG, e.getMessage());
+        }
+
+    }
+
+
     // ===========================
     // newGame
     // ===========================
@@ -1963,6 +1994,9 @@ public class GameActivity extends AppCompatActivity {
         // get the custom font
         //Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
         //Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
+
+        // 9/6/18 issue #69 - load up persisted achievements
+        loadAchievements();
 
         setContentView(R.layout.activity_game);
         Button buttonEndTurn = (Button) findViewById(R.id.button1);
@@ -2200,7 +2234,6 @@ public class GameActivity extends AppCompatActivity {
             Log.e(TAG, e.getMessage());
         }
 
-
         // next, persist the game log
         try {
             FileOutputStream fos = openFileOutput(SAVELOGFILENAME, Context.MODE_PRIVATE);
@@ -2212,7 +2245,13 @@ public class GameActivity extends AppCompatActivity {
         }
 
         // finally, persist state of achievements
-        persistAchievements();
+        try {
+            persistAchievements();
+        }
+        catch (Exception e) {
+            // raise an error
+            Log.e(TAG, e.getMessage());
+        }
 
     }
 
