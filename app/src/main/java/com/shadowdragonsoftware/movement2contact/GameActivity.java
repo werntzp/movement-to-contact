@@ -96,10 +96,10 @@ class Unit {
     static final int AGG_SOME = 2;
     static final int AGG_NO = 1;
 
-    private int _type = TYPE_INF; 
-    private int _size = SIZE_PLATOON;
-    private int _eff = EFF_GREEN; 
-    private int _owner = OWNER_PLAYER; 
+    private int _type;
+    private int _size;
+    private int _eff;
+    private int _owner;
     private boolean _isVisible = false;
     private String _name = "";
     private boolean _isActive = false;
@@ -328,11 +328,21 @@ public class GameActivity extends AppCompatActivity {
     // ==========================
     // deselect unit in map square by changing border
     // ==========================
-    void deselectUnit(int pos) {
+    void deselectUnit(int pos, Unit u) {
         try {
             ImageView v = (ImageView) _mapAdapter.getItem(pos);
             v.setPadding(2, 2, 2, 2);
             v.setBackgroundColor(Color.BLACK);
+            // if the unit is highlighted, switch the icon back
+            if (u != null) {
+                if ((v.getTag() == (Object) R.drawable.hq_section_selected) ||
+                        (v.getTag() == (Object) R.drawable.inf_platoon_selected) ||
+                        (v.getTag() == (Object) R.drawable.mortar_section_selected) ||
+                        (v.getTag() == (Object) R.drawable.mg_team_selected)) {
+                    v.setImageResource(getUnitIcon(u));
+                    v.setTag(getUnitIcon(u));
+                }
+            }
             _mapAdapter.notifyDataSetChanged();
         }
         catch (Exception e) {
@@ -343,7 +353,7 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     // doAttack
     // ===========================
-    void    doAttack(MapSquare fromSq, MapSquare toSq) {
+    void doAttack(MapSquare fromSq, MapSquare toSq) {
 
         Log.d(TAG, "Enter doAttack");
 
@@ -381,17 +391,15 @@ public class GameActivity extends AppCompatActivity {
 
         try {
             img = getUnitIcon(redUnit);
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
+            _mapAdapter.setItem(setImageResource(v, img), img, pos);
         } catch (Exception e) {
             img = toSq.getTerrainType();
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
+            _mapAdapter.setItem(setImageResource(v, img), img, pos);
             Log.e(TAG, e.getMessage());
         }
 
         // also, highight it in red
-        selectUnit(pos, Color.RED);
+        selectUnit(pos, Color.RED, null);
         final int unitPos = pos;
 
         // next, our unit has attacked, so set property
@@ -504,12 +512,11 @@ public class GameActivity extends AppCompatActivity {
                                 // if was enemy unit hit, and now black, need to remove them
                                 if ((unitSplash.getOwner() == Unit.OWNER_OPFOR) && (unitSplash.getEff() == Unit.EFF_BLACK)) {
                                     img = _mapSquares[posSplash].getTerrainType();
-                                    v.setImageResource(img);
-                                    _mapAdapter.setItem(v, img, pos);
+                                    _mapAdapter.setItem(setImageResource(v, img), img, pos);
                                     mapSplash = _mapSquares[posSplash];
                                     mapSplash.setUnit(null);
                                     _mapSquares[pos] = toSq;
-                                    deselectUnit(unitPos);
+                                    deselectUnit(unitPos, null);
                                     // reduce number of enemy units by one
                                     _enemyUnitCount--;
                                     Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
@@ -520,12 +527,10 @@ public class GameActivity extends AppCompatActivity {
                                     v = (ImageView) _mapAdapter.getItem(posSplash);
                                     try {
                                         img = getUnitIcon(unitSplash);
-                                        v.setImageResource(img);
-                                        _mapAdapter.setItem(v, img, posSplash);
+                                        _mapAdapter.setItem(setImageResource(v, img), img, posSplash);
                                     } catch (Exception e) {
                                         img = toSq.getTerrainType();
-                                        v.setImageResource(img);
-                                        _mapAdapter.setItem(v, img, posSplash);
+                                        _mapAdapter.setItem(setImageResource(v, img), img, posSplash);
                                         Log.e(TAG, e.getMessage());
                                     }
 
@@ -575,12 +580,11 @@ public class GameActivity extends AppCompatActivity {
         // if combat effectiveness now black, just get rid of it
         if ((redUnit != null) && (redUnit.getEff() == Unit.EFF_BLACK)) {
             img = toSq.getTerrainType();
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
+            _mapAdapter.setItem(setImageResource(v, img), img, pos);
             isNoLongerCombatEffective = true;
             toSq.setUnit(null);
             _mapSquares[pos] = toSq;
-            deselectUnit(unitPos);
+            deselectUnit(unitPos, null);
             _mapAdapter.notifyDataSetChanged();
             // reduce number of enemy units by one
             _enemyUnitCount--;
@@ -598,7 +602,7 @@ public class GameActivity extends AppCompatActivity {
             Utils.delay(secs, new Utils.DelayCallback() {
                 @Override
                 public void afterDelay() {
-                    deselectUnit(unitPos);
+                    deselectUnit(unitPos, redUnit);
                     // if we killed an enemy unit, tell player
                     try {
                         if ((redUnit.getOwner() == Unit.OWNER_OPFOR) && (redUnit.getEff() == Unit.EFF_BLACK)) {
@@ -705,7 +709,7 @@ public class GameActivity extends AppCompatActivity {
 
         // if active square, quick check to see if we selected same one
         if ((_activeSq != null) && (_activeSq == ms)) {
-            deselectUnit(position);
+            deselectUnit(position, _activeUnit);
             _actionText.setText("");
             _activeSq = null;
             _activeUnit = null;
@@ -717,7 +721,7 @@ public class GameActivity extends AppCompatActivity {
             _actionText.setText(String.format(getString(R.string.combat_ineffective), u.getName()));
             _activeUnit = null;
             _activeSq = null;
-            deselectUnit(position);
+            deselectUnit(position, u);
             return;
         }
 
@@ -725,12 +729,12 @@ public class GameActivity extends AppCompatActivity {
         if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
             _activeUnit = u;
             _activeSq = ms;
-            selectUnit(position, Color.BLUE);
+            selectUnit(position, Color.GREEN, _activeUnit);
             if (_activeUnit.getEff() == Unit.EFF_BLACK) {
                 _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
                 _activeUnit = null;
                 _activeSq = null;
-                deselectUnit(position);
+                deselectUnit(position, _activeUnit);
                 return;
             }
             if (_activeUnit.getHasAttacked()) {
@@ -751,8 +755,8 @@ public class GameActivity extends AppCompatActivity {
                     _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
                     return;
                 }
-                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
-                selectUnit(position, Color.BLUE);
+                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()), null);
+                selectUnit(position, Color.GREEN, _activeUnit);
                 if (_activeUnit.getHasAttacked()) {
                     _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                 } else {
@@ -817,8 +821,8 @@ public class GameActivity extends AppCompatActivity {
             // not adjacent
             // (a) if friendly, switch focus
             if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
-                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()));
-                selectUnit(position, Color.BLUE);
+                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()), ms.getUnit());
+                selectUnit(position, Color.GREEN, u);
                 _activeUnit = u;
                 _activeSq = ms;
                 if (_activeUnit.getHasAttacked()) {
@@ -933,9 +937,8 @@ public class GameActivity extends AppCompatActivity {
         pos = getArrayPosforRowCol(fromSq.getRow(), fromSq.getCol());
         v = (ImageView) _mapAdapter.getItem(pos);
         img = getUnitIcon(redUnit);
-        v.setImageResource(img);
-        _mapAdapter.setItem(v, img, pos);
-        selectUnit(pos, Color.BLUE);
+        _mapAdapter.setItem(setImageResource(v, img), img, pos);
+        selectUnit(pos, Color.GREEN, null);
         _mapAdapter.notifyDataSetChanged();
 
         // store so we can deselect later
@@ -943,14 +946,14 @@ public class GameActivity extends AppCompatActivity {
         final int blueUnitPos = getArrayPosforRowCol(toSq.getRow(), toSq.getCol());
 
         // highlight the unit we're attacking
-        selectUnit(blueUnitPos, Color.RED);
+        selectUnit(blueUnitPos, Color.RED, null);
 
         // after a 2 second delay, deselect the unit
         Utils.delay(2, new Utils.DelayCallback() {
             @Override
             public void afterDelay() {
-                deselectUnit(redUnitPos);
-                deselectUnit(blueUnitPos);
+                deselectUnit(redUnitPos, null);
+                deselectUnit(blueUnitPos, null);
             }
         });
 
@@ -1000,8 +1003,7 @@ public class GameActivity extends AppCompatActivity {
             // also, grab the imageview and update the image (especially if effectiveness changed)
             v = (ImageView) _mapAdapter.getItem(pos);
             img = getUnitIcon(blueUnit);
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, pos);
+            _mapAdapter.setItem(setImageResource(v, img), img, pos);
             _mapAdapter.notifyDataSetChanged();
 
         }
@@ -1110,14 +1112,12 @@ public class GameActivity extends AppCompatActivity {
                 v = (ImageView) _mapAdapter.getItem(fromPos);
                 if (v != null) {
                     img = fromSq.getTerrainType();
-                    v.setImageResource(img);
-                    _mapAdapter.setItem(v, img, fromPos);
+                    _mapAdapter.setItem(setImageResource(v, img), img, fromPos);
                 }
                 v = (ImageView) _mapAdapter.getItem(pos);
                 if (v != null) {
                     img = getUnitIcon(u);
-                    v.setImageResource(img);
-                    _mapAdapter.setItem(v, img, pos);
+                    _mapAdapter.setItem(setImageResource(v, img), img, pos);
                 }
                 // set flag so we pop out of loop
                 isAbleToMove = true;
@@ -1324,8 +1324,7 @@ public class GameActivity extends AppCompatActivity {
                     v = (ImageView) _mapAdapter.getItem(ctr);
                     if (v != null) {
                         img = fromSq.getTerrainType();
-                        v.setImageResource(img);
-                        _mapAdapter.setItem(v, img, ctr);
+                        _mapAdapter.setItem(setImageResource(v, img), img, ctr);
                     } else {
                         Log.d(TAG, "ImageView was null ... redUnit " + redUnit.getName() + " at " + Integer.toString(row) + ", " + Integer.toString(col));
                     }
@@ -1392,7 +1391,7 @@ public class GameActivity extends AppCompatActivity {
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
             ms = _mapSquares[ctr];
             // issue #55 - red highlight not always going away, so explicitly remove it here
-            deselectUnit(getArrayPosforRowCol(ms.getRow(), ms.getCol()));
+            deselectUnit(getArrayPosforRowCol(ms.getRow(), ms.getCol()), ms.getUnit());
             u = ms.getUnit();
             if (u != null) {
                 u.setRemainingMove(u.getMaxMove());
@@ -1405,8 +1404,7 @@ public class GameActivity extends AppCompatActivity {
                         pos = getArrayPosforRowCol(ms.getRow(), ms.getCol());
                         ImageView v = (ImageView) _mapAdapter.getItem(pos);
                         img = getUnitIcon(u);
-                        v.setImageResource(img);
-                        _mapAdapter.setItem(v, img, pos);
+                        _mapAdapter.setItem(setImageResource(v, img), img, pos);
                     } else {
                         // code here to see if hq unit adjacent to suppressed unit; if it is, remove the suppression right away (if a player unit)
                         msHQ = getHQUnitMapSquare();
@@ -1418,8 +1416,7 @@ public class GameActivity extends AppCompatActivity {
                             pos = getArrayPosforRowCol(ms.getRow(), ms.getCol());
                             ImageView v = (ImageView) _mapAdapter.getItem(pos);
                             img = getUnitIcon(u);
-                            v.setImageResource(img);
-                            _mapAdapter.setItem(v, img, pos);
+                            _mapAdapter.setItem(setImageResource(v, img), img, pos);
                         }
 
                     }
@@ -1430,7 +1427,7 @@ public class GameActivity extends AppCompatActivity {
         // if any active unit, deselect it
         if (_activeSq != null) {
             pos = getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol());
-            deselectUnit(pos);
+            deselectUnit(pos, _activeUnit);
             _activeSq = null;
         }
         if (_activeUnit != null) {
@@ -1509,8 +1506,7 @@ public class GameActivity extends AppCompatActivity {
             v.setPadding(2, 2, 2, 2);
             v.setBackgroundColor(Color.BLACK);
             img = ms.getTerrainType();
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, posFrom);
+            _mapAdapter.setItem(setImageResource(v, img), img, posFrom);
 
             // now drop that unit into new position
             ms = _mapSquares[posTo];
@@ -1521,10 +1517,10 @@ public class GameActivity extends AppCompatActivity {
             // re-draw icon in new spot
             v = (ImageView) _mapAdapter.getItem(posTo);
             v.setPadding(5, 5, 5, 5);
-            v.setBackgroundColor(Color.BLUE);
+            v.setBackgroundColor(Color.GREEN);
             img = getUnitIcon(u);
-            v.setImageResource(img);
-            _mapAdapter.setItem(v, img, posTo);
+            _mapAdapter.setItem(setImageResource(v, img), img, posTo);
+            selectUnit(posTo, Color.GREEN, u);
 
             // now set active
             _activeUnit = u;
@@ -2483,6 +2479,15 @@ public class GameActivity extends AppCompatActivity {
     }
 
     // ===========================
+    // setImageResource
+    // ===========================
+    ImageView setImageResource(ImageView v, int id) {
+        v.setImageResource(id);
+        v.setTag(id);
+        return v;
+    }
+
+    // ===========================
     // setUpFriendlyUnits
     // ===========================
     void setUpFriendlyUnits() {
@@ -2643,10 +2648,32 @@ public class GameActivity extends AppCompatActivity {
     // ==========================
     // select unit in map square by changing border
     // ==========================
-    void selectUnit(int pos, int color) {
+    void selectUnit(int pos, int color, Unit u) {
+
         ImageView v = (ImageView) _mapAdapter.getItem(pos);
+        int id = 0;
+
         v.setPadding(5, 5, 5, 5);
         v.setBackgroundColor(color);
+        // issue #68 -- if we're not highlighting an opfor unit, switch out the
+        // icon to be the highlighted one
+        if (color != Color.RED) {
+            if (u.getType() == Unit.TYPE_HQ) {
+                id = R.drawable.hq_section_selected;
+            }
+            if (u.getType() == Unit.TYPE_INF) {
+                id = R.drawable.inf_platoon_selected;
+            }
+            if (u.getType() == Unit.TYPE_MG) {
+                id = R.drawable.mg_team_selected;
+            }
+            if (u.getType() == Unit.TYPE_MORTAR) {
+                id = R.drawable.mortar_section_selected;
+            }
+            v.setImageResource(id);
+            v.setTag(id);
+        }
+
     }
 
     // ===========================
