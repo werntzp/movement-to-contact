@@ -716,6 +716,8 @@ public class GameActivity extends AppCompatActivity {
             return;
         }
 
+        // re-worked options
+
         // if new square has player unit that is combat effective, just return and don't select
         if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (u.getEff() == Unit.EFF_BLACK)) {
             Log.d(TAG, "Selected unit is not combat effective.");

@@ -9,7 +9,7 @@
     tools:context="com.shadowdragonsoftware.movement2contact.GameActivity">
 
     <ImageView
-        android:id="@+id/imgHideUnits"
+        android:id="@+id/imgHideOShowUnits"
         android:layout_width="45dp"
         android:layout_height="50dp"
         android:layout_marginBottom="4dp"
