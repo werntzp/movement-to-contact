@@ -8,6 +8,19 @@
     android:background="#000000"
     tools:context="com.shadowdragonsoftware.movement2contact.GameActivity">
 
+    <ImageView
+        android:id="@+id/imgHideUnits"
+        android:layout_width="45dp"
+        android:layout_height="50dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:contentDescription="@string/cd_help"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/button1"
+        app:srcCompat="@drawable/help_transparent" />
+
     <TextView
         android:id="@+id/textView2"
         android:layout_width="match_parent"

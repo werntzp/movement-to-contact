@@ -707,7 +707,7 @@ public class GameActivity extends AppCompatActivity {
         ms = _mapSquares[position];
         u = ms.getUnit();
 
-        // if active square, quick check to see if we selected same one
+        // if we selected same square, deselect square and unit
         if ((_activeSq != null) && (_activeSq == ms)) {
             deselectUnit(position, _activeUnit);
             _actionText.setText("");
@@ -716,181 +716,136 @@ public class GameActivity extends AppCompatActivity {
             return;
         }
 
-        // if there's an active unit and the one we selected is not combat effective, need to check for that
+        // if new square has player unit that is combat effective, just return and don't select
         if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (u.getEff() == Unit.EFF_BLACK)) {
+            Log.d(TAG, "Selected unit is not combat effective.");
             _actionText.setText(String.format(getString(R.string.combat_ineffective), u.getName()));
-            _activeUnit = null;
-            _activeSq = null;
-            deselectUnit(position, u);
             return;
         }
 
-        // if no active unit, the current one is now active (assuming player owns it)
-        if ((_activeUnit == null) && (u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+        // if new square has player unit that is suppressed, just return and don't select
+        if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER) && (!u.getIsSuppressed())) {
+            Log.d(TAG, "Selected unit is suppressed.");
+            _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
+            return;
+        }
+
+        // if new square has a player unit in it, make it active
+        if ((u != null) && (u.getOwner() == Unit.OWNER_PLAYER)) {
+            Log.d(TAG, "Selected a player unit, so deselect if there was an active one, and set message for new one.");
+            // deselect the old unit
+            if (_activeUnit != null) {
+                deselectUnit(position, _activeUnit);
+            }
+            // make new square and unit the active ones
             _activeUnit = u;
             _activeSq = ms;
             selectUnit(position, Color.GREEN, _activeUnit);
-            if (_activeUnit.getEff() == Unit.EFF_BLACK) {
-                _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
-                _activeUnit = null;
-                _activeSq = null;
-                deselectUnit(position, _activeUnit);
-                return;
-            }
+            // update status text with whether it can move and/or attack
             if (_activeUnit.getHasAttacked()) {
                 _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
             } else {
                 _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
             }
             return;
+
         }
 
-        // if we have active square and unit, did they select on adjacent map square?
-        if (isAdjacent(_activeSq, ms)) {
-            // yes, adjacent
-            // (a) if friendly there, switch to that unit
-            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
-                // make sure unit able to do anything
-                if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
-                    return;
-                }
-                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()), null);
-                selectUnit(position, Color.GREEN, _activeUnit);
-                if (_activeUnit.getHasAttacked()) {
-                    _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                } else {
-                    _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                }
-                _activeUnit = u;
-                _activeSq = ms;
-                return;
-            }
-            // (b) if empty, move in (assuming move left)
-            if (ms.getUnit() == null) {
-                // make sure unit able to do anything
-                if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
-                    return;
-                }
+        // if new square is adjacent and there's an active unit
+        if ((isAdjacent(_activeSq, ms)) && (_activeUnit != null)) {
+            Log.d(TAG, "Selected square is adjacent and there's an active unit.");
+            // if square is empty, try to move in
+            if (isEmpty(ms)) {
                 if (doMove(_activeSq, ms)) {
-                    _activeUnit = ms.getUnit();
+                    // make new square and unit the active ones
+                    _activeUnit = u;
+                    _activeSq = ms;
+                    selectUnit(position, Color.GREEN, _activeUnit);
+                    // update status text with whether it can move and/or attack
                     if (_activeUnit.getHasAttacked()) {
                         _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                     } else {
                         _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
                     }
                 }
-
                 return;
             }
-            // (c) if enemy there, attack
-            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_OPFOR)) {
-                // make sure unit able to do anything
-                if (_activeUnit.getIsSuppressed()) {
-                    _actionText.setText(String.format(getString(R.string.suppressed), _activeUnit.getName()));
-                    return;
-                }
-                // make sure unit can attack (based on combat effectiveness)
-                if (_activeUnit.getEff() == Unit.EFF_BLACK) {
-                    _actionText.setText(String.format(getString(R.string.combat_ineffective), _activeUnit.getName()));
-                    return;
-                }
+            // if enemy there, either we get first shot (they are visible) or they do (if hidden)
+            if ((u != null) && (u.getOwner() == Unit.OWNER_OPFOR)) {
                 // if enemy not visible, we stumbled onto them so they get a first shot
-                if (!ms.getUnit().getIsVisible()) {
+                if (!u.getIsVisible()) {
                     // issue #56 - if player has no move and enemy hidden, this should not happen
-                    if (isAbleToMoveInto(ms, _activeSq.getUnit())) {
+                    if (isAbleToMoveInto(ms, _activeUnit)) {
                         doOpForAttack(ms, _activeSq);
                         return;
-                    }
-                    else {
+                    } else {
                         // just hop out
                         return;
                     }
                 }
                 if (!_activeUnit.getHasAttacked()) {
-                        doAttack(_activeSq, ms);
+                    doAttack(_activeSq, ms);
                 } else {
                     _actionText.setText(String.format(getString(R.string.already_attacked), _activeUnit.getName()));
                 }
-            }
-
-            // (d) otherwise, ignore
-
-        } else {
-            // not adjacent
-            // (a) if friendly, switch focus
-            if ((ms.getUnit() != null) && (ms.getUnit().getOwner() == Unit.OWNER_PLAYER)) {
-                deselectUnit(getArrayPosforRowCol(_activeSq.getRow(), _activeSq.getCol()), ms.getUnit());
-                selectUnit(position, Color.GREEN, u);
-                _activeUnit = u;
-                _activeSq = ms;
-                if (_activeUnit.getHasAttacked()) {
-                    _actionText.setText(String.format(getString(R.string.move_left_cantattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                } else {
-                    _actionText.setText(String.format(getString(R.string.move_left_canattack), _activeUnit.getName(), _activeUnit.getRemainingMove()));
-                }
                 return;
             }
-            // 7/11/18 - issue #59, when mortar is firing, this code needs to go first otherwise it wasn't getting tripped
-            // (c) we have a mortar firing into an empty space, which is still legal
-            if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (!_activeUnit.getHasAttacked()) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
-                // issue #42 - if picking empty square, pop up dialog to be on safe side
-                int it = getArrayPosforRowCol(ms.getRow(), ms.getCol());
-                Unit ut = _mapSquares[it].getUnit();
-                // issue 51 - only do if mortar already hasn't attacked
-                if ((ut == null) || (!ut.getIsVisible())) {
-                    // store the map square
-                    _ms = ms;
+        }
 
-                    // onlick listener
-                    DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            switch (which){
-                                case DialogInterface.BUTTON_POSITIVE:
-                                    //Yes button clicked
-                                    doAttack(_activeSq, _ms);
+        //  not adjacent and active unit is a mortar
+        // 7/11/18 - issue #59, when mortar is firing, this code needs to go first otherwise it wasn't getting tripped
+        // we have a mortar firing into an empty space, which is still legal
+        if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (!_activeUnit.getHasAttacked()) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+            // issue #42 - if picking empty square, pop up dialog to be on safe side
+            int it = getArrayPosforRowCol(ms.getRow(), ms.getCol());
+            Unit ut = _mapSquares[it].getUnit();
+            // issue 51 - only do if mortar already hasn't attacked
+            if ((ut == null) || (!ut.getIsVisible())) {
+                // store the map square
+                _ms = ms;
+                // onlick listener
+                DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which){
+                            case DialogInterface.BUTTON_POSITIVE:
+                                //Yes button clicked
+                                doAttack(_activeSq, _ms);
 
-                                case DialogInterface.BUTTON_NEGATIVE:
-                                    //No button clicked
-                                    break;
-                            }
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                //No button clicked
+                                break;
                         }
-                    };
-
-                    // throw up yes/no dialog
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
-                    builder.setMessage(getString(R.string.fire_mortars)).setPositiveButton("Yes", dialogClickListener)
-                            .setNegativeButton("No", dialogClickListener).show();
-
-                }
-                else {
-                    doAttack(_activeSq, ms);
-                }
-            }
-
-            // (b) if enemy there and in range, attack
-            if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
-                // next, need to see if enemy unit visible; if not, only mortar can do recon by fire and attack
-                if (ms.getUnit().getIsVisible()) {
-                    doAttack(_activeSq, ms);
-                    return;
-                } else {
-                    if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
-                        doAttack(_activeSq, ms);
-                    } else {
-                        // ignore
                     }
+                };
+
+                // throw up yes/no dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
+                builder.setMessage(getString(R.string.fire_mortars)).setPositiveButton("Yes", dialogClickListener)
+                        .setNegativeButton("No", dialogClickListener).show();
+            }
+            else {
+                doAttack(_activeSq, ms);
+            }
+            return;
+        }
+
+        // not adjacent, but enemy may still be in range
+        if ((_activeSq != null) && (ms.getUnit() != null) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+            // next, need to see if enemy unit visible; if not, only mortar can do recon by fire and attack
+            if (ms.getUnit().getIsVisible()) {
+                doAttack(_activeSq, ms);
+            } else {
+                if (_activeUnit.getType() == Unit.TYPE_MORTAR) {
+                    doAttack(_activeSq, ms);
                 }
             }
-            // (d)
-            else if (_activeSq != null) {
-                _actionText.setText(R.string.out_of_range);
-            }
-
-            // (c) otherwise, ignore
-
+            return;
+        }
+        // nope, not in range
+        else if (_activeSq != null) {
+            _actionText.setText(R.string.out_of_range);
+            return;
         }
 
     }
