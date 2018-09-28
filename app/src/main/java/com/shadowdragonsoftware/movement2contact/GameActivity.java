@@ -283,6 +283,7 @@ public class GameActivity extends AppCompatActivity {
     private int _unitsKilledByMGs = 0; // number of enemy units killed by machine gun machine gun team
     private boolean _noDamageTaken = true; // track whether any player unit has taken damage
     private boolean _splashDamageTaken = false; // track mortar splash damage
+    private boolean _showUnits = true; // track whether or not units are shown on map
 
     // ===========================
     // calculateScore
@@ -851,6 +852,55 @@ public class GameActivity extends AppCompatActivity {
         }
 
     }
+
+    // ===========================
+    // doHideUnits
+    // ===========================
+    void doHideUnits(boolean b) {
+
+        int pos;
+        MapSquare ms = null;
+        Unit u;
+        int ti;
+        int ui = 0;
+        ImageView v = null;
+        int img;
+
+        // issue #66 -- if they want to hide all units, walk through map squares, find every unit and set it to invisible
+        for (pos = 0; pos < MAX_ARRAY; pos++) {
+            ms = _mapSquares[pos];
+            u = ms.getUnit();
+            ti = getTerrainImage(ms);
+            if (u != null) {
+                ui = getUnitIcon(u);
+            }
+            // decide what image to show
+            if (b) {
+                img = ti;
+            }
+            else {
+                if ((u != null) && (u.getIsVisible())) {
+                    img = ui;
+                }
+                else {
+                    img = ti;
+                }
+            }
+
+            try {
+                v = (ImageView) _mapAdapter.getItem(pos);
+                _mapAdapter.setItem(setImageResource(v, img), img, pos);
+            }
+            catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
+
+        }
+
+        _mapAdapter.notifyDataSetChanged();
+
+    }
+
 
     // ===========================
     // doOpForAttack
@@ -2001,6 +2051,24 @@ public class GameActivity extends AppCompatActivity {
                 return true;
             }
         });
+
+        // 9/28/18 issue #66 - add onclick to show/hide unit image
+        ImageView imgUnits = (ImageView) findViewById(R.id.imgUnits);
+        imgUnits.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ImageView x = v.findViewById(R.id.imgUnits);
+                if (_showUnits) {
+                    x.setImageResource(R.drawable.hideunits_transparent);
+                    doHideUnits(true);
+                }
+                else {
+                    x.setImageResource(R.drawable.showunits_transparent);
+                    doHideUnits(false);
+                }
+                _showUnits = !_showUnits;
+            }
+        });
+
 
         // set the onlick
         _gridView.setOnItemClickListener(new OnItemClickListener() {
