@@ -1,6 +1,6 @@
 package com.shadowdragonsoftware.movement2contact;
 
-import com.shadowdragonsoftware.movement2contact.Prefs;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Color;
@@ -12,17 +12,11 @@ import android.widget.Button;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.content.Intent;
-import android.widget.TextView;
-import android.graphics.Typeface;
 import android.widget.ImageView;
 import java.util.ArrayList;
 import android.util.Log;
-import java.io.FileOutputStream;
-import android.content.Context;
 import android.view.View.OnTouchListener;
 import 	android.view.MotionEvent;
-import android.support.v4.content.res.ResourcesCompat;
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -56,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             String[] files = fileList();
-            enableResume = false;
             for (String file : files) {
                 if (file.equals(SAVEGAMEFILENAME)) {
                     enableResume = true;
@@ -69,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
             enableResume = false;
         }
 
-        Button resumeButton = (Button) findViewById(R.id.btnResume);
+        Button resumeButton = findViewById(R.id.btnResume);
         resumeButton.setEnabled(enableResume);
         if (enableResume) {
             resumeButton.setTextColor(Color.parseColor("#ffff00"));
@@ -119,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStop();
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -132,23 +126,11 @@ public class MainActivity extends AppCompatActivity {
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
-        // set custom font on label and buttons
-        //Typeface tf =  ResourcesCompat.getFont(this, R.font.army);
-        //TextView text = (TextView) findViewById(R.id.textViewAppName);
-        //text.setTypeface(tf);
-
-        //Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
-
-        //Typeface tf =  ResourcesCompat.getFont(this, R.font.army); // getResources().getFont(R.font.army);
-        //Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
-
         // disable the resume button if no saved game
-        Button resumeButton = (Button) findViewById(R.id.btnResume);
-        //resumeButton.setTypeface(tft);
+        Button resumeButton = findViewById(R.id.btnResume);
         // if there is a saved game file, enable the resume button, otherwise disable it
         try {
             String[] files = fileList();
-            enableResume = false;
             for (String file : files) {
                 if (file.equals(SAVEGAMEFILENAME)) {
                     enableResume = true;
@@ -157,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         catch (Exception e) {
-            enableResume = false;
             Log.e(TAG, e.getMessage());
         }
 
@@ -177,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                Button btn = (Button) findViewById(R.id.btnResume);
+                Button btn = findViewById(R.id.btnResume);
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
@@ -193,13 +174,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // add ontouchlistener to new game button; on the release of the button, go ahead and fire off new game activities
-        Button newButton = (Button) findViewById(R.id.btnNew);
-        //newButton.setTypeface(tft);
+        Button newButton = findViewById(R.id.btnNew);
         newButton.setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                Button btn = (Button) findViewById(R.id.btnNew);
+                Button btn = findViewById(R.id.btnNew);
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
@@ -223,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // add onclick to help image
-        ImageView imageViewHelp = (ImageView) findViewById(R.id.imgHelp);
+        ImageView imageViewHelp = findViewById(R.id.imgHelp);
         imageViewHelp.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, HelpActivity.class);
@@ -233,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // add onclick to help image
-        ImageView imageViewAchievements = (ImageView) findViewById(R.id.imgAchievements);
+        ImageView imageViewAchievements = findViewById(R.id.imgAchievements);
         imageViewAchievements.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, AchievementsActivity.class);
@@ -257,7 +237,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // add onclick to sound image
-        ImageView imageViewSound = (ImageView) findViewById(R.id.imgSound);
+        ImageView imageViewSound = findViewById(R.id.imgSound);
         imageViewSound.setOnClickListener(new OnClickListener() {
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this, R.style.MyAlertDialogStyle);

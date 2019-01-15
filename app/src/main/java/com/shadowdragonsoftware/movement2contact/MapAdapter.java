@@ -1,6 +1,5 @@
 package com.shadowdragonsoftware.movement2contact;
 
-import android.support.annotation.IntegerRes;
 import android.widget.BaseAdapter;
 import android.content.Context;
 import android.widget.ImageView;
@@ -8,10 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.GridView;
 import android.graphics.Color;
-import com.shadowdragonsoftware.movement2contact.R;
-import java.util.Random;
-import android.widget.AdapterView.OnItemClickListener;
-import android.util.Log;
 
 public class MapAdapter extends BaseAdapter {
 
@@ -20,7 +15,7 @@ public class MapAdapter extends BaseAdapter {
     private static final String TAG = "MapAdapter";
     private ImageView[] _imageViews = new ImageView[GameActivity.MAX_ARRAY];
 
-    public MapAdapter(Context c) {
+    MapAdapter(Context c) {
         _mContext = c;
     }
 
@@ -37,13 +32,13 @@ public class MapAdapter extends BaseAdapter {
     }
 
     // method to update internal array
-    public void setItem(Object v, int img, int pos) {
+    void setItem(Object v, int img, int pos) {
         _imageViews[pos] = (ImageView) v;
         _mThumbIds[pos] = img;
     }
 
     // method to accept incoming array of image ids
-    public void setImageArray(Integer[] val) {
+    void setImageArray(Integer[] val) {
         _mThumbIds = val;
     }
 

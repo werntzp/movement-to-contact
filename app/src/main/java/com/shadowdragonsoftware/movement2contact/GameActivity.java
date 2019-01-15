@@ -1,12 +1,10 @@
 package com.shadowdragonsoftware.movement2contact;
 
-import com.shadowdragonsoftware.movement2contact.Prefs;
+import android.annotation.SuppressLint;
 import android.graphics.Color;
-import android.graphics.Typeface;
-import android.net.Uri;
-import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.AdapterView;
 import android.widget.GridView;
@@ -18,6 +16,8 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.content.Intent;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Random;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,7 +32,6 @@ import java.io.FileInputStream;
 import android.content.Context;
 import android.widget.Scroller;
 import android.text.method.ScrollingMovementMethod;
-import android.view.Gravity;
 
 class Utils {
 
@@ -101,14 +100,14 @@ class Unit {
     private int _eff;
     private int _owner;
     private boolean _isVisible = false;
-    private String _name = "";
-    private boolean _isActive = false;
-    private int _maxMove = 0;
-    private int _remainingMove = 0;
-    private int _attackRange = 0;
-    private boolean _hasAttacked = false;
-    private boolean _isSuppressed = false;
-    private int _attackNumber = 0;
+    private String _name;
+    private boolean _isActive;
+    private int _maxMove;
+    private int _remainingMove;
+    private int _attackRange;
+    private boolean _hasAttacked;
+    private boolean _isSuppressed;
+    private int _attackNumber;
     private int _turnSuppressed = 0;
     private int _aggression = 0;
 
@@ -290,9 +289,9 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     int calculateStars() {
 
-        int stars = 0;
-        int score = 0;
-        Unit blueUnit = null;
+        int stars;
+        int score;
+        Unit blueUnit;
 
         // subtract how many turns from 15
         score = (15 - _turn);
@@ -316,7 +315,7 @@ public class GameActivity extends AppCompatActivity {
         // now, take score to generate stars
         if (score >= 10) {
             stars = 3;
-        } else if ((score < 10) && (score > 5)) {
+        } else if (score > 5) {
             stars = 2;
         } else {
             stars = 1;
@@ -354,19 +353,19 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     // doAttack
     // ===========================
+    @SuppressLint("SetTextI18n")
     void doAttack(MapSquare fromSq, MapSquare toSq) {
 
         Log.d(TAG, "Enter doAttack");
 
         final Unit redUnit = toSq.getUnit();
         Unit blueUnit = fromSq.getUnit();
-        ImageView v = null;
+        ImageView v;
         int pos;
-        int icon;
         int attackNum;
         int roll;
         int damage = 0;
-        String attackMsg = "";
+        String attackMsg;
         int secs = 2;
         int img;
         boolean isHit = false;
@@ -374,9 +373,9 @@ public class GameActivity extends AppCompatActivity {
         boolean isNoLongerCombatEffective = false;
         boolean friendlyFire = false;
         int s;
-        int posSplash = 0;
+        int posSplash;
         Unit unitSplash;
-        int hitSplash = 0;
+        int hitSplash;
         MapSquare mapSplash;
         String achievementMsg = "";
 
@@ -521,7 +520,7 @@ public class GameActivity extends AppCompatActivity {
                                     // reduce number of enemy units by one
                                     _enemyUnitCount--;
                                     Log.d(TAG, "There are now " + _enemyUnitCount + " enemy units left");
-                                    _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
+                                    _gameLog += "- " + Objects.requireNonNull(redUnit).getName() + " was destroyed\r\n";
                                 } else if ((unitSplash.getOwner() == Unit.OWNER_PLAYER)) {
                                     // otherwise, update the map with new icon for player unit; don't change icon if enemy  unit because we're not supposed to know
                                     // what their damage is at
@@ -557,7 +556,7 @@ public class GameActivity extends AppCompatActivity {
             if ((isHit) && (damage <= 8) && (isSuppressed)) {
                 // they were hit and suppressed
                 attackMsg = String.format(getString(R.string.attackmsg_sup), redUnit.getName());
-            } else if ((isHit) && (damage <= 8) && (!isSuppressed)) {
+            } else if ((isHit) && (damage <= 8)) {
                 // they were hit but not suppressed
                 attackMsg = String.format(getString(R.string.attackmsg_nosup), redUnit.getName());
             } else if (isNoLongerCombatEffective) {
@@ -565,7 +564,7 @@ public class GameActivity extends AppCompatActivity {
                 attackMsg = String.format(getString(R.string.attackmsg_killed), redUnit.getName());
             } else {
                 // not even hit or hit but no damage, so same message
-                attackMsg = String.format(getString(R.string.attackmsg_miss), redUnit.getName());
+                attackMsg = String.format(getString(R.string.attackmsg_miss), Objects.requireNonNull(redUnit).getName());
             }
         }
         // issue #57 - fixed this message not resetting properly
@@ -582,7 +581,6 @@ public class GameActivity extends AppCompatActivity {
         if ((redUnit != null) && (redUnit.getEff() == Unit.EFF_BLACK)) {
             img = toSq.getTerrainType();
             _mapAdapter.setItem(setImageResource(v, img), img, pos);
-            isNoLongerCombatEffective = true;
             toSq.setUnit(null);
             _mapSquares[pos] = toSq;
             deselectUnit(unitPos, null);
@@ -606,7 +604,7 @@ public class GameActivity extends AppCompatActivity {
                     deselectUnit(unitPos, redUnit);
                     // if we killed an enemy unit, tell player
                     try {
-                        if ((redUnit.getOwner() == Unit.OWNER_OPFOR) && (redUnit.getEff() == Unit.EFF_BLACK)) {
+                        if ((Objects.requireNonNull(redUnit).getOwner() == Unit.OWNER_OPFOR) && (redUnit.getEff() == Unit.EFF_BLACK)) {
                             _gameLog += "- " + redUnit.getName() + " was destroyed\r\n";
                             _actionText.setText(redUnit.getName() + "was destroyed");
                         }
@@ -688,15 +686,12 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     // doClick
     // ===========================
-    void doClick(View v, int position) {
+    void doClick(int position) {
 
         Log.d(TAG, "Enter doClick");
 
-        MapSquare ms = null;
-        Unit u = null;
-        int owner = Unit.OWNER_PLAYER;
-        int icon = 0;
-        ImageView imgClicked = (ImageView) v;
+        MapSquare ms;
+        Unit u;
 
         // issue #2
         // if we're in middle of enemy turn, don't handle clicks
@@ -798,7 +793,7 @@ public class GameActivity extends AppCompatActivity {
         //  not adjacent and active unit is a mortar
         // 7/11/18 - issue #59, when mortar is firing, this code needs to go first otherwise it wasn't getting tripped
         // we have a mortar firing into an empty space, which is still legal
-        if ((_activeSq != null) && (_activeUnit.getType() == Unit.TYPE_MORTAR) && (!_activeUnit.getHasAttacked()) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
+        if ((_activeSq != null) && (Objects.requireNonNull(_activeUnit).getType() == Unit.TYPE_MORTAR) && (!_activeUnit.getHasAttacked()) && (getDistanceBetweenSquares(_activeSq.getRow(), _activeSq.getCol(), ms.getRow(), ms.getCol()) <= _activeUnit.getAttackRange())) {
             // issue #42 - if picking empty square, pop up dialog to be on safe side
             int it = getArrayPosforRowCol(ms.getRow(), ms.getCol());
             Unit ut = _mapSquares[it].getUnit();
@@ -843,12 +838,10 @@ public class GameActivity extends AppCompatActivity {
                     doAttack(_activeSq, ms);
                 }
             }
-            return;
         }
         // nope, not in range
         else if (_activeSq != null) {
             _actionText.setText(R.string.out_of_range);
-            return;
         }
 
     }
@@ -859,11 +852,11 @@ public class GameActivity extends AppCompatActivity {
     void doHideUnits(boolean b) {
 
         int pos;
-        MapSquare ms = null;
+        MapSquare ms;
         Unit u;
         int ti;
         int ui = 0;
-        ImageView v = null;
+        ImageView v;
         int img;
 
         // issue #66 -- if they want to hide all units, walk through map squares, find every unit and set it to invisible
@@ -907,18 +900,18 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     void doOpForAttack(MapSquare fromSq, MapSquare toSq) {
 
-        int attackNum = 0;
-        int roll = 0;
+        int attackNum;
+        int roll;
         int damage = 0;
-        String attackMsg = "";
-        int pos = 0;
-        int img = 0;
+        String attackMsg;
+        int pos;
+        int img;
         boolean isSuppressed = false;
         boolean isHit = false;
-        ImageView v = null;
+        ImageView v;
         Unit redUnit = fromSq.getUnit();
         Unit blueUnit = toSq.getUnit();
-        MapSquare msHQ = null;
+        MapSquare msHQ;
 
         // build up attack number. Use base value, minus any terrain modifier, minus effectiveness
         attackNum = redUnit.getAttackNumber();
@@ -984,18 +977,14 @@ public class GameActivity extends AppCompatActivity {
                 }
             }
 
-            // certain types of unit cause supression
+            // certain types of unit cause suppression
             switch (redUnit.getType()) {
                 case Unit.TYPE_SNIPER:
                 case Unit.TYPE_MG:
                     // snipers and mg can suppress, but if target unit is HQ unit or adjacent to HQ unit, no suppression occurs
-                    if (blueUnit.getType() == Unit.TYPE_HQ) {
-                        // no suppression
-                    } else {
+                    if (blueUnit.getType() != Unit.TYPE_HQ) {
                         msHQ = getHQUnitMapSquare();
-                        if (isAdjacent(toSq, msHQ)) {
-                            // no suppression
-                        } else {
+                        if (!isAdjacent(toSq, msHQ)) {
                             blueUnit.setIsSuppressed(true);
                             blueUnit.setTurnSuppressed(_turn);
                             isSuppressed = true;
@@ -1020,7 +1009,7 @@ public class GameActivity extends AppCompatActivity {
         if ((isHit) && (damage <= 8) && (isSuppressed)) {
             // they were hit and suppressed
             attackMsg = String.format(getString(R.string.attackmsg_sup), blueUnit.getName());
-        } else if ((isHit) && (damage <= 8) && (!isSuppressed)) {
+        } else if ((isHit) && (damage <= 8)) {
             // they were hit but not suppressed
             attackMsg = String.format(getString(R.string.attackmsg_nosup), blueUnit.getName());
         } else {
@@ -1047,7 +1036,7 @@ public class GameActivity extends AppCompatActivity {
     void doOpForMove(MapSquare fromSq, int fromPos) {
 
         MapSquare ms = fromSq;
-        MapSquare toSquare = null;
+        MapSquare toSquare;
         int pos;
         Unit u = fromSq.getUnit();
         int row = ms.getRow();
@@ -1056,7 +1045,7 @@ public class GameActivity extends AppCompatActivity {
         int toCol;
         boolean isAbleToMove = false;
         int tries = 0;
-        ImageView v = null;
+        ImageView v;
         int img;
 
         // outer loop
@@ -1144,27 +1133,23 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     void doOpForTurn() {
 
-        Unit redUnit = null;
-        MapSquare fromSq = null;
-        MapSquare toSq = null;
-        int row = 0;
-        int col = 0;
-        boolean justAttacked = false;
-        boolean stayVisible = false;
+        Unit redUnit;
+        MapSquare fromSq;
+        MapSquare toSq;
+        int row;
+        int col;
+        boolean justAttacked;
+        boolean stayVisible;
         int adjRow;
         int adjCol;
-        int pos = 0;
-        Unit blueUnit = null;
+        int pos;
+        Unit blueUnit;
         int result;
-        int attackNum;
-        double distanceActual = 0.0;
-        double distanceAllowed = 2.0;
-        int roll = 0;
-        int damage = 0;
-        String attackMsg = "";
-        ImageView v = null;
-        int img = 0;
-        Button endTurnButton = (Button) findViewById(R.id.button1);
+        double distanceActual;
+        double distanceAllowed;
+        ImageView v;
+        int img;
+        Button endTurnButton = findViewById(R.id.button1);
 
         Log.d(TAG, "Enter doOpForTurn");
 
@@ -1308,18 +1293,14 @@ public class GameActivity extends AppCompatActivity {
                             stayVisible = false;
                             // next, even if should be invisible, randomly figure out if they should stay visible (4 in 10 chance)
                             result = getRandomNumber(10, 1);
-                            //Log.d(TAG, "redUnit random number to stay visible: " + Integer.toString(result));
-                            if ((!stayVisible) && (result <= 4)) {
+                            if (result <= 4) {
                                 stayVisible = true;
                                 redUnit.setIsVisible(true);
                             } else {
-                                stayVisible = false;
                                 redUnit.setIsVisible(false);
                             }
 
-
                         }
-
 
                     }
 
@@ -1360,13 +1341,13 @@ public class GameActivity extends AppCompatActivity {
 
         Log.d(TAG, "Enter doEndTurn");
 
-        Unit u = null;
-        MapSquare ms = null;
-        MapSquare msHQ = null;
-        int pos = 0;
-        final Button endTurnButton = (Button) findViewById(R.id.button1);
-        int img = 0;
-        boolean gameOver = false;
+        Unit u;
+        MapSquare ms;
+        MapSquare msHQ;
+        int pos;
+        final Button endTurnButton = findViewById(R.id.button1);
+        int img;
+        boolean gameOver;
 
         // time to quickly check if game should continue or they hit the two auto-end game business rules
         // #1 are we past max turns?
@@ -1386,7 +1367,7 @@ public class GameActivity extends AppCompatActivity {
             }
         }
 
-        if (gameOver == true) {
+        if (gameOver) {
             showEndGameDialog(GAME_OVER_LOSE, "");
         }
 
@@ -1471,7 +1452,7 @@ public class GameActivity extends AppCompatActivity {
 
 
         // extra check in case they avoid dialog and game didn't end
-        if (gameOver == true) {
+        if (gameOver) {
             finish();
         }
 
@@ -1487,13 +1468,12 @@ public class GameActivity extends AppCompatActivity {
 
         Log.d(TAG, "Enter doMove");
 
-        int posFrom = 0;
-        int posTo = 0;
-        Unit u = null;
-        MapSquare ms = null;
-        int icon = 0;
-        ImageView v = null;
-        int img = 0;
+        int posFrom;
+        int posTo;
+        Unit u;
+        MapSquare ms;
+        ImageView v;
+        int img;
 
         // first, figure out which array positions we're talking about
         posFrom = getArrayPosforRowCol(fromSq.getRow(), fromSq.getCol());
@@ -1848,7 +1828,7 @@ public class GameActivity extends AppCompatActivity {
         // load up achievements to set values in case they've uh, already achieved some
         try {
             FileInputStream fis = openFileInput(ACHIEVEMENTSFILENAME);
-            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
             BufferedReader br = new BufferedReader(isr);
             String[] achievements = br.readLine().split(",");
             if (Utils.convertToBoolean(achievements[0])) { _movewithpurpose = true; }
@@ -1878,15 +1858,15 @@ public class GameActivity extends AppCompatActivity {
         // create array of map objects
         _mapSquares = new MapSquare[MAX_ARRAY];
         MapSquare ms;
-        int x = 0;
-        int enemyUnits = 0;
+        int x;
+        int enemyUnits;
 
         Log.d(TAG, "newGame");
 
         // iterate and populate mapsquares
         int row = 1;
         int col = 1;
-        int terrainType = 0;
+        int terrainType;
 
         // first, set row, col and terrain type for every map square
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
@@ -1941,7 +1921,7 @@ public class GameActivity extends AppCompatActivity {
         try {
 
             FileInputStream fis = openFileInput(ACHIEVEMENTSFILENAME);
-            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
             BufferedReader br = new BufferedReader(isr);
             String[] achievements = br.readLine().split(",");
             _movewithpurpose = Utils.convertToBoolean(achievements[0]);
@@ -1978,6 +1958,7 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     // onCreate
     // ===========================
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onCreate(Bundle savedInstanceState) {
 
@@ -1991,25 +1972,19 @@ public class GameActivity extends AppCompatActivity {
         _mpMG = MediaPlayer.create(this, R.raw.mg);
         _mpMortar = MediaPlayer.create(this, R.raw.mortar);
         _mpSniper = MediaPlayer.create(this, R.raw.sniper);
-        String newGame = "true";
-        TextView tv = null;
-
-        // get the custom font
-        //Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
-        //Typeface tft = Typeface.createFromAsset(getAssets(), "fonts/ArmyThin.ttf");
+        String newGame;
+        TextView tv;
 
         // 9/6/18 issue #69 - load up persisted achievements
         loadAchievements();
 
         setContentView(R.layout.activity_game);
-        Button buttonEndTurn = (Button) findViewById(R.id.button1);
-        //buttonEndTurn.setTypeface(tf);
-        // button click
+        Button buttonEndTurn = findViewById(R.id.button1);
         buttonEndTurn.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                Button btn = (Button) findViewById(R.id.button1);
+                Button btn = findViewById(R.id.button1);
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
@@ -2033,13 +2008,11 @@ public class GameActivity extends AppCompatActivity {
         });
 
         // get the two textviews for status
-        _turnText = (TextView) findViewById(R.id.textView2);
-        //_turnText.setTypeface(tft);
-        _actionText = (TextView) findViewById(R.id.textView8);
-        //_actionText.setTypeface(tft);
+        _turnText = findViewById(R.id.textView2);
+        _actionText = findViewById(R.id.textView8);
 
         // set the mapadapter to build out the initial map
-        _gridView = (GridView) findViewById(R.id.gridView1);
+        _gridView = findViewById(R.id.gridView1);
 
         // set the long press
         _gridView.setOnItemLongClickListener(new OnItemLongClickListener() {
@@ -2053,7 +2026,7 @@ public class GameActivity extends AppCompatActivity {
         });
 
         // 9/28/18 issue #66 - add onclick to show/hide unit image
-        ImageView imgUnits = (ImageView) findViewById(R.id.imgUnits);
+        ImageView imgUnits = findViewById(R.id.imgUnits);
         imgUnits.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 ImageView x = v.findViewById(R.id.imgUnits);
@@ -2075,13 +2048,13 @@ public class GameActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
                 Log.d(TAG, "Clicked on position: " + Integer.toString(position));
-                doClick(v, position);
+                doClick(position);
 
             }
         });
 
         // set long press on the messages area
-        tv = (TextView) findViewById(R.id.textView8);
+        tv = findViewById(R.id.textView8);
 
         // set the long press
         tv.setOnLongClickListener(new View.OnLongClickListener() {
@@ -2098,13 +2071,12 @@ public class GameActivity extends AppCompatActivity {
                         })
                         .show();
 
-                TextView textView = (TextView) dialog.findViewById(android.R.id.message);
+                TextView textView = dialog.findViewById(android.R.id.message);
                 textView.setTextSize(12);
                 textView.setMaxLines(5);
                 textView.setScroller(new Scroller(GameActivity.this));
                 textView.setVerticalScrollBarEnabled(true);
                 textView.setMovementMethod(new ScrollingMovementMethod());
-                //textView.scrollTo(0, textView.getLineHeight() * textView.getLineCount());
                 textView.setGravity(Gravity.LEFT | Gravity.BOTTOM);
 
                 return true;
@@ -2125,7 +2097,7 @@ public class GameActivity extends AppCompatActivity {
         }
 
         try {
-            if (newGame.equalsIgnoreCase("true")) {
+            if (Objects.requireNonNull(newGame).equalsIgnoreCase("true")) {
                 newGame();
             } else {
                 resumeGame();
@@ -2179,12 +2151,10 @@ public class GameActivity extends AppCompatActivity {
     public void persistAchievements() {
 
         StringBuilder ach = new StringBuilder();
-        ach.append((_movewithpurpose ? 1 : 0) + "," + (_soupsandwich ? 1 : 0) + "," + (_bangbang ? 1 : 0) + "," + (_reargear  ? 1 : 0)+ "," +
-                (_rainsteel ? 1 : 0) + "," + (_lollygagger ? 1 : 0) + "," + (_beltfed ? 1 : 0) + "," +
-                (_dangerclose ? 1 : 0) + "," + (_gleaming ? 1 : 0) + "\r\n");
+        ach.append(_movewithpurpose ? 1 : 0).append(",").append(_soupsandwich ? 1 : 0).append(",").append(_bangbang ? 1 : 0).append(",").append(_reargear ? 1 : 0).append(",").append(_rainsteel ? 1 : 0).append(",").append(_lollygagger ? 1 : 0).append(",").append(_beltfed ? 1 : 0).append(",").append(_dangerclose ? 1 : 0).append(",").append(_gleaming ? 1 : 0).append("\r\n");
         try {
             FileOutputStream fos = openFileOutput(ACHIEVEMENTSFILENAME, Context.MODE_PRIVATE);
-            fos.write(ach.toString().getBytes("UTF-8"));
+            fos.write(ach.toString().getBytes(StandardCharsets.UTF_8));
             fos.close();
 
         } catch (Exception e) {
@@ -2201,14 +2171,14 @@ public class GameActivity extends AppCompatActivity {
     public void persistGame() {
 
         StringBuilder csv = new StringBuilder();
-        MapSquare ms = null;
-        Unit u = null;
+        MapSquare ms;
+        Unit u;
 
         Log.d(TAG, "persistGame");
 
         // loop through the mapsqaures array and create csv file in format of:
         // <first row> current turn
-        csv.append(Integer.toString(_turn) + "\r\n");
+        csv.append(Integer.toString(_turn)).append("\r\n");
 
         //
         for (int ctr = 0; ctr < MAX_ARRAY; ctr++) {
@@ -2216,7 +2186,7 @@ public class GameActivity extends AppCompatActivity {
             // row
             // col
             // terrain type
-            csv.append(ms.getRow() + "," + ms.getCol() + "," + ms.getTerrainType());
+            csv.append(ms.getRow()).append(",").append(ms.getCol()).append(",").append(ms.getTerrainType());
             // unit owner
             u = ms.getUnit();
             if (u == null) {
@@ -2237,9 +2207,7 @@ public class GameActivity extends AppCompatActivity {
                 // unit eff
                 // unit maxmove
                 // unit remaining move
-                csv.append("," + u.getName() + "," + u.getType() + "," + u.getSize() + "," + u.getOwner() + "," + u.getIsVisible() + "," + u.getIsSuppressed() + "," + u.getTurnSuppressed() +
-                        "," + u.getHasAttacked() + "," + u.getAttackRange() + "," + u.getAttackNumber() + "," + u.getAggression() + "," + u.getEff() +
-                        "," + u.getMaxMove() + "," + u.getRemainingMove());
+                csv.append(",").append(u.getName()).append(",").append(u.getType()).append(",").append(u.getSize()).append(",").append(u.getOwner()).append(",").append(u.getIsVisible()).append(",").append(u.getIsSuppressed()).append(",").append(u.getTurnSuppressed()).append(",").append(u.getHasAttacked()).append(",").append(u.getAttackRange()).append(",").append(u.getAttackNumber()).append(",").append(u.getAggression()).append(",").append(u.getEff()).append(",").append(u.getMaxMove()).append(",").append(u.getRemainingMove());
 
             }
             csv.append("\r\n");
@@ -2248,7 +2216,7 @@ public class GameActivity extends AppCompatActivity {
 
         try {
             FileOutputStream fos = openFileOutput(SAVEGAMEFILENAME, Context.MODE_PRIVATE);
-            fos.write(csv.toString().getBytes("UTF-8"));
+            fos.write(csv.toString().getBytes(StandardCharsets.UTF_8));
             fos.close();
         } catch (Exception e) {
             // raise an error
@@ -2258,7 +2226,7 @@ public class GameActivity extends AppCompatActivity {
         // next, persist the game log
         try {
             FileOutputStream fos = openFileOutput(SAVELOGFILENAME, Context.MODE_PRIVATE);
-            fos.write(_gameLog.getBytes("UTF-8"));
+            fos.write(_gameLog.getBytes(StandardCharsets.UTF_8));
             fos.close();
         } catch (Exception e) {
             // raise an error
@@ -2282,21 +2250,17 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     void placeEnemyUnit(Unit u) {
 
-        int col = 0;
-        int row = 0;
-        int pos = 0;
+        int col;
+        int row;
+        int pos;
 
         Log.d(TAG, "Enter placeEnemyUnit");
 
-        while (true) {
+        do {
             // generate random row and col
             col = getRandomNumber(MAX_COLS, 1);
-            row = getRandomNumber(MAX_ROWS-2, 7);
-            if (!isMapSpotTaken(row, col)) {
-                // found an empty spot, so break out of loop
-                break;
-            }
-        }
+            row = getRandomNumber(MAX_ROWS - 2, 7);
+        } while (!isMapSpotTaken(row, col));
 
         // all enemy units start out not visible
         u.setIsVisible(false);
@@ -2367,7 +2331,7 @@ public class GameActivity extends AppCompatActivity {
     int randomizeTerrain() {
 
         Random randomGenerator = new Random();
-        int terrainType = 0;
+        int terrainType;
         switch (randomGenerator.nextInt(10) + 1) {
             case 1:
             case 2:
@@ -2399,23 +2363,20 @@ public class GameActivity extends AppCompatActivity {
         Log.d(TAG, "resumeGame");
 
 
-        String line = null;
-        String[] vals = null;
+        String line;
+        String[] vals;
         // create array of map objects
         _mapSquares = new MapSquare[MAX_ARRAY];
         MapSquare ms;
-        int row = 1;
-        int col = 1;
-        int terrainType = 0;
         int ctr = 0;
-        Unit unit = null;
-        String unitName = "";
+        Unit unit;
+        String unitName;
 
         // open up file from directory, read in the bytes and build out the map
 
         try {
             FileInputStream fis = openFileInput(SAVEGAMEFILENAME);
-            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
             BufferedReader br = new BufferedReader(isr);
             // first line is game turn
             line = br.readLine();
@@ -2483,7 +2444,7 @@ public class GameActivity extends AppCompatActivity {
         // load up game log
         try {
             FileInputStream fis = openFileInput(SAVELOGFILENAME);
-            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
             BufferedReader br = new BufferedReader(isr);
             while ((line = br.readLine()) != null) {
                 // issue #43 - game log loses hard returns, so add them in there before dropping into game log
@@ -2522,11 +2483,9 @@ public class GameActivity extends AppCompatActivity {
                 getResources().getIdentifier("units",
                         "raw", getPackageName()));
         BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
-        StringBuilder out = new StringBuilder();
         String line;
-        String item;
         Unit unit;
-        Integer pos = 0;
+        int pos;
 
         try {
             while ((line = reader.readLine()) != null) {
@@ -2543,7 +2502,6 @@ public class GameActivity extends AppCompatActivity {
             }
             reader.close();
         } catch (IOException ioe) {
-            // do nothing
             Log.e(TAG, ioe.getMessage());
         }
 
@@ -2565,19 +2523,18 @@ public class GameActivity extends AppCompatActivity {
         BufferedReader reader = new BufferedReader(new InputStreamReader(ins));
         String line;
         Unit unit;
-        int pos = 0;
-        int rifleSquads = 0;
-        int mgTeams = 0;
-        int sniperTeams = 0;
-        String name = "";
-        int owner = 0;
-        int type = 0;
-        int size = 0;
-        int range = 0;
-        int attack = 0;
-        int move = 0;
+        int rifleSquads;
+        int mgTeams;
+        int sniperTeams;
+        String name;
+        int owner;
+        int type;
+        int size;
+        int range;
+        int attack;
+        int move;
         int aggression = Unit.AGG_NO;
-        int a = Unit.AGG_NO;
+        int a;
 
         // first, let's figure out how many units we need to base off the templates in the CSV
         // how many bad guys (between 5 and 10)
@@ -2706,7 +2663,6 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     void showDetails(int pos) {
 
-        ImageView v = (ImageView) _mapAdapter.getItem(pos);
         MapSquare ms = _mapSquares[pos];
         Unit u = ms.getUnit();
         String title = null;
@@ -2791,8 +2747,8 @@ public class GameActivity extends AppCompatActivity {
     // ===========================
     public void showEndGameDialog(int message, String achievements) {
 
-        String title = null;
-        String body = null;
+        String title;
+        String body;
         int stars = 0;
 
         // decide which title to use
@@ -2828,36 +2784,6 @@ public class GameActivity extends AppCompatActivity {
         myIntent.putExtra("STARS", stars);
         startActivity(myIntent);
 
-        /*
-        // instantiate an AlertDialog.Builder with its constructor
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.MyAlertDialogStyle);
-        builder.setMessage(body);
-        builder.setTitle(getString(title));
-        builder.setCancelable(false);
-        builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                // back to main menu
-                dialog.dismiss();
-                finish();
-            }
-        });
-        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialog) {
-                // back to main menu
-                dialog.dismiss();
-                finish();
-            }
-        });
-        AlertDialog dialog = builder.create();
-        try {
-            dialog.show();
-        }
-        catch (Exception e) {
-            dialog.dismiss();
-            Log.e(TAG, e.getMessage());
-        }
-        */
     }
 
     @Override

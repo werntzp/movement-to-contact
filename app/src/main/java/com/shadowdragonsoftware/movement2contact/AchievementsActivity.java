@@ -2,24 +2,17 @@ package com.shadowdragonsoftware.movement2contact;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.webkit.WebView;
 import android.widget.Button;
-import android.app.ListActivity;
-import android.os.Bundle;
-import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 public class AchievementsActivity extends AppCompatActivity {
 
@@ -32,24 +25,16 @@ public class AchievementsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_achievements);
 
-        /*
-        get the custom font
-        Typeface tf = Typeface.createFromAsset(getAssets(), "fonts/Army.ttf");
-        add button to close out activity
-        add onclick to help button
-        */
-
-        Button okButton = (Button) findViewById(R.id.button6);
-        //okButton.setTypeface(tf);
+        Button okButton = findViewById(R.id.button6);
         okButton.setTextColor(Color.parseColor("#ffff00"));
         okButton.setBackgroundResource(R.drawable.button_border_enabled);
 
-        // now, set a touch listener to go load the file and resume the game
+        /* now, set a touch listener to go load the file and resume the game */
         okButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                Button btn = (Button) findViewById(R.id.button6);
+                Button btn = findViewById(R.id.button6);
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
@@ -97,11 +82,11 @@ public class AchievementsActivity extends AppCompatActivity {
         // load up achievements to set values in case they've uh, already achieved some
         try {
             FileInputStream fis = openFileInput(ACHIEVEMENTSFILENAME);
-            InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
+            InputStreamReader isr = new InputStreamReader(fis, StandardCharsets.UTF_8);
             BufferedReader br = new BufferedReader(isr);
             String[] achievements = br.readLine().split(",");
             for (int i = 0; i < 9; i++) {
-                if (Utils.convertToBoolean(achievements[i])) { achievements_icon[i] = R.drawable.achievement_unlocked; };
+                if (Utils.convertToBoolean(achievements[i])) { achievements_icon[i] = R.drawable.achievement_unlocked; }
             }
 
         }
@@ -112,7 +97,7 @@ public class AchievementsActivity extends AppCompatActivity {
 
         // load up the list view
         AchievementsAdapter adapter = new AchievementsAdapter(this, achievements_title, achievements_desc, achievements_icon);
-        ListView list=(ListView)findViewById(R.id.lvwAchievements);
+        ListView list = findViewById(R.id.lvwAchievements);
         list.setAdapter(adapter);
 
     }

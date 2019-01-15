@@ -1,5 +1,6 @@
 package com.shadowdragonsoftware.movement2contact;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -11,6 +12,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.util.Objects;
 
 public class EndGameActivity extends AppCompatActivity {
 
@@ -30,6 +33,7 @@ public class EndGameActivity extends AppCompatActivity {
     }
 
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,20 +41,20 @@ public class EndGameActivity extends AppCompatActivity {
 
         // pull out the values that were passed in
         Bundle extras = getIntent().getExtras();
-        TextView txtEndGameTitle = (TextView) findViewById(R.id.txtEndGameTitle);
-        txtEndGameTitle.setText(extras.getString("TITLE"));
+        TextView txtEndGameTitle = findViewById(R.id.txtEndGameTitle);
+        txtEndGameTitle.setText(Objects.requireNonNull(extras).getString("TITLE"));
 
-        TextView txtEndGameMessage = (TextView) findViewById(R.id.txtEndGameMessage);
+        TextView txtEndGameMessage = findViewById(R.id.txtEndGameMessage);
         txtEndGameMessage.setText(extras.getString("MESSAGE"));
 
-        Button btnClose = (Button) findViewById(R.id.btnClose);
+        Button btnClose = findViewById(R.id.btnClose);
 
         btnClose.setTextColor(Color.parseColor("#ffff00"));
         btnClose.setBackgroundResource(R.drawable.button_border_enabled);
 
-        ImageView img1 = (ImageView) findViewById(R.id.imgStar1);
-        ImageView img2 = (ImageView) findViewById(R.id.imgStar2);
-        ImageView img3 = (ImageView) findViewById(R.id.imgStar3);
+        ImageView img1 = findViewById(R.id.imgStar1);
+        ImageView img2 = findViewById(R.id.imgStar2);
+        ImageView img3 = findViewById(R.id.imgStar3);
         Drawable draw = getResources().getDrawable(R.drawable.achievement_unlocked);
 
         int stars = extras.getInt("STARS", 0);
@@ -70,10 +74,11 @@ public class EndGameActivity extends AppCompatActivity {
 
         // now, set a touch listener to go end the game
         btnClose.setOnTouchListener(new View.OnTouchListener() {
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
-                Button btn = (Button) findViewById(R.id.btnClose);
+                Button btn = findViewById(R.id.btnClose);
                 if(event.getAction() == MotionEvent.ACTION_DOWN) {
                     btn.setTextColor(Color.parseColor("#ffffff"));
                     btn.setBackgroundResource(R.drawable.button_border_selected);
