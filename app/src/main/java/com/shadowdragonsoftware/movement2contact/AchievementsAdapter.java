@@ -2,6 +2,7 @@ package com.shadowdragonsoftware.movement2contact;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,7 +25,8 @@ public class AchievementsAdapter extends ArrayAdapter<String> {
             this.img=img;
         }
 
-        public View getView(int position,View view,ViewGroup parent) {
+        @Override
+        public View getView(int position, View view, @NonNull ViewGroup parent) {
             LayoutInflater inflater=context.getLayoutInflater();
             View rowView=inflater.inflate(R.layout.achievements_list, null,true);
 
