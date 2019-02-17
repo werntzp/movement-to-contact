@@ -7,10 +7,10 @@
     android:layout_height="match_parent"
     android:background="#000000"
     android:padding="0dp"
-    android:paddingBottom="0dp"
     android:paddingLeft="0dp"
-    android:paddingRight="0dp"
     android:paddingTop="0dp"
+    android:paddingRight="0dp"
+    android:paddingBottom="0dp"
     tools:context="com.shadowdragonsoftware.movement2contact.MainActivity">
 
 
@@ -18,43 +18,38 @@
         android:id="@+id/imgSplash"
         android:layout_width="400dp"
         android:layout_height="600dp"
-        android:layout_marginBottom="40dp"
         android:contentDescription="@string/cd_background"
         android:scaleType="fitXY"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@mipmap/m2c_main_splash" />
+        app:srcCompat="@mipmap/m2c_main_splash"
+        tools:layout_editor_absoluteX="6dp"
+        tools:layout_editor_absoluteY="46dp" />
 
     <TextView
         android:id="@+id/txtAppName"
-        android:layout_width="346dp"
-        android:layout_height="110dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="25dp"
+        android:layout_width="402dp"
+        android:layout_height="82dp"
+        android:background="#000000"
         android:fontFamily="@font/army"
         android:text="@string/app_name"
         android:textAlignment="center"
-        android:textColor="#000000"
-        android:textSize="50dp"
+        android:textColor="#ffff00"
+        android:textSize="50sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/imgSplash" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/btnNew"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="100dp"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="32dp"
         android:background="@drawable/button_border_enabled"
         android:fontFamily="@font/armythin"
         android:maxWidth="125dp"
         android:text="@string/new_game"
         android:textColor="#ffff00"
-        android:textSize="20dp"
+        android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/txtAppName" />
 
@@ -68,7 +63,7 @@
         android:maxWidth="125dp"
         android:text="@string/resume_game"
         android:textColor="#c0c0c0"
-        android:textSize="20dp"
+        android:textSize="20sp"
         app:layout_constraintStart_toEndOf="@+id/btnNew"
         app:layout_constraintTop_toTopOf="@+id/btnNew" />
 
@@ -76,8 +71,8 @@
         android:id="@+id/imgSds"
         android:layout_width="70dp"
         android:layout_height="70dp"
-        android:layout_marginBottom="4dp"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="4dp"
         android:contentDescription="@string/cd_sds"
         android:scaleType="fitXY"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -108,8 +103,8 @@
         android:id="@+id/imgHelp"
         android:layout_width="45dp"
         android:layout_height="50dp"
-        android:layout_marginBottom="8dp"
         android:layout_marginEnd="12dp"
+        android:layout_marginBottom="8dp"
         android:contentDescription="@string/cd_help"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

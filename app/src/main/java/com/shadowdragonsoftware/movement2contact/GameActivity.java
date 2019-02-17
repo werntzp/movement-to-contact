@@ -495,6 +495,14 @@ public class GameActivity extends AppCompatActivity {
                 _mapSquares[pos].setUnit(redUnit);
             }
         }
+        else {
+            Utils.delay(secs, new Utils.DelayCallback() {
+                        @Override
+                        public void afterDelay() {
+                            deselectUnit(unitPos, redUnit);
+                        }
+                    });
+        }
 
         // issue 49 - if a mortar attack, 10% chance it also does damage to units in surrounding squares
         // walk around the attacked square
@@ -888,6 +896,8 @@ public class GameActivity extends AppCompatActivity {
             // decide what image to show
             if (b) {
                 img = ti;
+                // also, don't let them click on the grid
+                _gridView.setEnabled(false);
             }
             else {
                 if ((u != null) && (u.getIsVisible())) {
@@ -896,6 +906,9 @@ public class GameActivity extends AppCompatActivity {
                 else {
                     img = ti;
                 }
+                // turn back on grid
+                _gridView.setEnabled(true);
+
             }
 
             try {

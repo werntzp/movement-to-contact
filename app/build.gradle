@@ -4,10 +4,10 @@ android {
     compileSdkVersion 27
     defaultConfig {
         applicationId 'com.shadowdragonsoftware.movement2contact'
-        minSdkVersion 21
-        targetSdkVersion 21
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion 26
+        targetSdkVersion 26
+        versionCode 3
+        versionName "1.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
     }
@@ -26,9 +26,9 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation 'com.android.support:support-compat:27.0.2'
-    implementation 'com.android.support:design:27.0.2'
-    implementation 'com.android.support.constraint:constraint-layout:1.1.0-beta4'
-    implementation 'com.android.support:support-core-utils:27.0.2'
+    implementation 'com.android.support:support-compat:27.1.1'
+    implementation 'com.android.support:design:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:2.0.0-alpha3'
+    implementation 'com.android.support:support-core-utils:27.1.1'
     testImplementation 'junit:junit:4.12'
 }
