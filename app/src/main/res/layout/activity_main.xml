@@ -13,7 +13,6 @@
     android:paddingBottom="0dp"
     tools:context="com.shadowdragonsoftware.movement2contact.MainActivity">
 
-
     <ImageView
         android:id="@+id/imgSplash"
         android:layout_width="400dp"
@@ -109,6 +108,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/help_transparent" />
-
-
+    
 </android.support.constraint.ConstraintLayout>
